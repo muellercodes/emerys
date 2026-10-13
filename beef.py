@@ -130,52 +130,61 @@ CSS = r"""
 .basics b{display:block;margin-bottom:2px}
 .basics span{color:var(--muted);font-size:15px}
 @media(max-width:480px){.cols{grid-template-columns:1fr}.tabs button{font-size:13px;padding:10px 2px}}
-/* ---------- desktop (1024px and up): the original site's look, with the chart pinned on
-   the left and the tabs, cuts, comparator and basics beside it. ---------- */
+/* ---------- desktop (1024px and up): the chart pinned on the left as the way in, the
+   tabs beside it, cuts as compact cards that open in the details panel. ---------- */
 @media(min-width:1024px){
-  .wrap{max-width:1160px;padding:40px 24px 0;display:grid;grid-template-columns:380px minmax(0,1fr);gap:0 48px;align-items:start}
-  .chartcard{grid-column:1;grid-row:1/span 20;position:sticky;top:24px;background:var(--tint);border:0;border-radius:0;padding:24px 22px 20px}
-  .chart .primal path{fill:#fff}
-  .chart .primal:hover path{fill:#ecdcd4}
-  .chart .neutral path{fill:#e3d6cf}
-  .blurb{font-size:15px;line-height:24px;margin:14px 2px 0;color:#5e5e5e}
+  .wrap{max-width:1160px;padding:36px 24px 0;display:grid;grid-template-columns:360px minmax(0,1fr);gap:0 56px;align-items:start}
+  .chartcard{grid-column:1;grid-row:1/span 20;position:sticky;top:20px;background:#fff;border:1px solid #e9e1dc;border-radius:4px;padding:22px 18px 20px}
+  .chart .neutral path{fill:#ece3de}
+  .chart .primal path{fill:#f6eeea;stroke:#fff;stroke-width:2.5}
+  .chart .primal:hover path{fill:#ead8ce}
+  .chart .primal.on path{fill:var(--brown)}
+  .chart .primal text{font-size:12.5px}
+  .blurb{margin:16px 4px 0;font-size:15px;line-height:1.6;color:#5e5e5e}
   .tabs,.tab{grid-column:2}
-  .tabs{margin:0 0 6px;gap:32px;border-bottom:1px solid var(--line)}
-  .tabs button{flex:none;border:0;border-bottom:1px solid transparent;margin-bottom:-1px;border-radius:0;background:none;color:#151515;padding:0 0 10px;font:400 14px/24px var(--sans);letter-spacing:.214em;text-transform:uppercase}
-  .tabs button[aria-selected=true]{background:none;color:#151515;font-weight:400;border-bottom-color:var(--brown)}
+  .tabs{margin:0 0 4px;gap:30px;border-bottom:1px solid var(--line)}
+  .tabs button{flex:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0;background:none;color:#151515;padding:0 0 11px;font:400 14px/24px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+  .tabs button[aria-selected=true]{background:none;color:var(--brown);font-weight:400;border-bottom-color:var(--brown)}
   .tabs button:hover{border-bottom-color:#cdb9ab}
-  .btools{padding-top:18px}
-  .btools .row{max-width:none}
-  .btools .search{flex:0 1 520px}
-  .bchips{gap:10px 26px;padding:18px 0 4px}
-  .bchips button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
-  .bchips button[aria-pressed=true]{background:none;color:#151515;border-bottom-color:var(--brown)}
-  .bchips button:hover{border-bottom-color:#cdb9ab}
-  #blist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 32px;margin-top:26px;align-items:start}
-  #blist .item{margin:0;padding:0;border:0;border-radius:0;background:var(--tint)}
-  #blist .item summary,#blist .item.plain{padding:26px 22px 24px;min-height:148px}
-  #blist .name,#blist .item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em}
-  #blist .body{margin:0 22px 22px}
-  .section{padding-top:22px}
-  .section h2{margin:0 0 6px;font:400 24px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown)}
-  .section .sub{font-size:16px;line-height:24px;color:#5e5e5e;margin:0 0 22px}
-  .chips.wrap2{gap:10px 26px;padding:0 0 18px}
-  .chips.wrap2 button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
-  .chips.wrap2 button[aria-pressed=true]{border-bottom-color:var(--brown)}
-  .panel{background:var(--tint);border:0;border-radius:0;padding:26px 28px 16px}
-  .panel h3{font:400 20px/1.35 var(--sans);letter-spacing:.045em;margin:0 0 6px}
-  .panel p{font-size:15px;line-height:24px;color:#5e5e5e}
-  .picks li{border-top-color:#ead9d1}
-  .cmp{gap:24px;margin-bottom:24px}
-  .cmp select{border:1px solid #c7c3c1;border-radius:0;padding:12px 12px;font-size:16px}
-  .cols{gap:24px}
-  .col{background:var(--tint);border:0;border-radius:0;padding:26px 24px 20px}
-  .col h3{font:400 20px/1.35 var(--sans);letter-spacing:.045em;margin:0 0 10px}
-  .col h4{margin:14px 0 4px;font:400 11.5px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
-  .col p{font-size:15px;line-height:24px;color:#454545}
+  .btools{padding-top:22px}
+  .btools .row{display:flex;flex-direction:row;align-items:center;gap:20px;max-width:none}
+  .btools .search{flex:1}
+  .btools .search input{border:1px solid #d3cac5;border-radius:4px;padding:11px 14px;font-size:15px}
+  .btools .switch{margin:0;font:400 14px/1 var(--sans);letter-spacing:0;text-transform:none;color:#5e5e5e}
+  .bchips{gap:8px;padding:14px 0 0}
+  .bchips button{border:1px solid #ddd2cc;border-radius:999px;background:#fff;color:#2b2b2b;padding:6px 14px;font:400 14px/1.3 var(--sans);letter-spacing:0;text-transform:none}
+  .bchips button:hover{border-color:var(--brown)}
+  .bchips button[aria-pressed=true]{background:var(--brown);border-color:var(--brown);color:#fff}
+  #bpricenote{font-size:12.5px;margin:12px 0 0}
+  #blist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:20px;align-items:stretch}
+  #blist .item{margin:0;padding:0;border:1px solid #e9e1dc;border-radius:4px;background:#fff}
+  #blist .item summary,#blist .item.plain{padding:16px 18px 17px}
+  #blist .name,#blist .item.plain .name{font:600 16.5px/1.35 var(--sans);letter-spacing:0}
+  #blist .body{display:none}
+  .section{padding-top:26px}
+  .section h2{margin:0 0 4px;font:400 30px/1.25 var(--serif);letter-spacing:.01em;text-transform:none;color:#1b1b1b}
+  .section .sub{font-size:16px;line-height:1.6;color:#5e5e5e;margin:0 0 20px}
+  .chips.wrap2{gap:8px;padding:0 0 18px;flex-wrap:wrap}
+  .chips.wrap2 button{border:1px solid #ddd2cc;border-radius:999px;background:#fff;color:#2b2b2b;padding:6px 14px;font:400 14px/1.3 var(--sans);letter-spacing:0;text-transform:none}
+  .chips.wrap2 button:hover{border-color:var(--brown)}
+  .chips.wrap2 button[aria-pressed=true]{background:var(--brown);border-color:var(--brown);color:#fff}
+  .panel{background:#fff;border:1px solid #e9e1dc;border-radius:4px;padding:24px 26px 14px}
+  .panel h3{font:400 24px/1.25 var(--serif);margin:0 0 6px}
+  .panel p{font-size:15.5px;line-height:1.6;color:#5e5e5e}
+  .picks li{border-top-color:var(--line);padding:11px 0}
+  .picks .cut{font-weight:600;text-decoration:none;border-bottom:1px solid #d9c6bb}
+  .picks .cut:hover{border-bottom-color:var(--brown)}
+  .cmp{gap:16px;margin-bottom:16px}
+  .cmp select{border:1px solid #d3cac5;border-radius:4px;padding:11px 12px;font-size:15px}
+  .cols{gap:16px}
+  .col{background:#fff;border:1px solid #e9e1dc;border-radius:4px;padding:22px 22px 18px}
+  .col h3{font:400 24px/1.25 var(--serif);margin:0 0 8px}
+  .col h4{margin:16px 0 4px;font:400 11.5px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
+  .col p{font-size:15px;line-height:1.6;color:#333}
+  .col .cut{font-weight:600}
   .basics li{padding:18px 0;border-top-color:var(--line)}
-  .basics b{font:400 18px/1.4 var(--sans);letter-spacing:.045em;margin-bottom:4px}
-  .basics span{font-size:15px;line-height:24px;color:#5e5e5e}
+  .basics b{font:600 16.5px/1.4 var(--sans);margin-bottom:4px}
+  .basics span{font-size:15.5px;line-height:1.6;color:#5e5e5e}
 }
 """
 
@@ -235,6 +244,7 @@ tabs.forEach(function(t){t.addEventListener('click',function(){showTab(t.dataset
 function openCut(id){
   showTab('cuts'); bq.value=''; selectPrimal('',false);
   var t=document.getElementById(id); if(!t)return;
+  if(wide.matches&&openDrawer(t))return;
   if(t.tagName==='DETAILS')t.open=true;
   setTimeout(function(){t.scrollIntoView({block:'start'});window.scrollBy(0,-12);},50);
 }

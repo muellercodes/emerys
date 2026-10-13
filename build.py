@@ -390,10 +390,11 @@ def build(rows, demo=False):
     specials = [r for r in rows if "sale" in r]
     regular = [r for r in rows if "sale" not in r]
     cats = [c for c in ORDER if any(r["cat"] == c for r in rows)]
-    chips = '<button type="button" aria-pressed="true" data-cat="">All</button>'
+    n = lambda k: f'<span class="n">{k}</span>'
+    chips = f'<button type="button" aria-pressed="true" data-cat="">All{n(len(rows))}</button>'
     if specials:
-        chips += '<button type="button" aria-pressed="false" data-cat="__specials__">Specials</button>'
-    chips += "".join(f'<button type="button" aria-pressed="false" data-cat="{esc(c)}">{esc(c)}</button>' for c in cats)
+        chips += f'<button type="button" aria-pressed="false" data-cat="__specials__">Specials{n(len(specials))}</button>'
+    chips += "".join(f'<button type="button" aria-pressed="false" data-cat="{esc(c)}">{esc(c)}{n(sum(1 for r in rows if r["cat"] == c))}</button>' for c in cats)
     sections = ""
     if specials:
         items = ""
@@ -600,15 +601,17 @@ body.prices .price{display:inline-block}
 .strip{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:18px 26px}
 .strip img{height:38px;width:auto;max-width:150px;object-fit:contain}
 .strip a{display:block}
-/* ---------- desktop: the look of emerysmeatbrewer.com at full width ----------
-   Measured off the live GoDaddy site at 1440px: 1160px container with 24px gutters, the
-   200px logo centered with the phone number level with it on the right, the nav below in
-   14px spaced capitals with a thin brown underline on the current page, Playfair 44px
-   page titles set left, #faf2f0 cards with centered Open Sans titles, 12px spaced-capital
-   footer. Below 1024px none of this applies and the approved phone layout is untouched. */
+.chips button .n{display:none}
+/* ---------- desktop (1024px and up) ----------
+   The header and footer copy emerysmeatbrewer.com (200px centered logo, phone on the right,
+   spaced-capital nav with a brown underline, Playfair titles, spaced-capital footer). The
+   catalogue itself is laid out for shopping: a sticky sidebar with search, the Prices
+   switch and the categories with counts; compact product cards that line up in even rows;
+   and the details opening in a panel from the right instead of stretching the grid.
+   Below 1024px none of this applies and the approved phone layout is untouched. */
 @media(min-width:1024px){
   .in{max-width:1160px}
-  /* header */
+  /* header, as on the original site */
   .site{max-width:1160px;margin:0 auto;padding:56px 24px 16px;position:relative}
   .site .phone{position:absolute;right:24px;top:141px;font:400 22px/33px var(--sans);letter-spacing:0}
   .site .bar{margin-top:0;min-height:200px}
@@ -617,60 +620,67 @@ body.prices .price{display:inline-block}
   .site nav.desk a{font:400 14px/24px var(--sans);letter-spacing:.214em;color:#151515;padding:0 0 4px;border-bottom:1px solid transparent}
   .site nav.desk a[aria-current=page]{font-weight:400;border-bottom-color:var(--brown)}
   .site nav.desk a:hover{border-bottom-color:#cdb9ab}
-  /* page title, like "Our Meats and Produce" */
+  /* page title */
   .head{background:#fff;text-align:left}
   .head .in{max-width:1160px;padding:40px 24px 0}
   .eyebrow{display:none}
-  h1{margin:0 0 16px;font:400 44px/1.2 var(--serif);letter-spacing:.023em;color:#1b1b1b}
-  .lede{margin:0;max-width:46em;font-size:16px;line-height:24px;color:#5e5e5e}
+  h1{margin:0 0 12px;font:400 44px/1.2 var(--serif);letter-spacing:.023em;color:#1b1b1b}
+  .lede{margin:0;max-width:40em;font-size:17px;line-height:27px;color:#5e5e5e}
   .lede a{color:var(--brown)}
-  /* search, and the categories as a second row of nav-style links */
-  .tools{border-bottom:0;box-shadow:0 1px 0 var(--line)}
-  .tools .in{max-width:1160px;padding:24px 24px 14px;display:block}
-  .tools .row{max-width:none}
-  .tools .search{flex:0 1 560px}
-  .switch{margin-left:auto;font:400 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#595959}
-  .search input{border:1px solid #c7c3c1;border-radius:0;padding:13px 16px;font-size:16px}
+  /* catalogue: sidebar + list */
+  .catalog{display:grid;grid-template-columns:248px minmax(0,1fr);gap:0 56px;max-width:1160px;margin:0 auto;padding:0 24px;align-items:start}
+  .tools{grid-column:1;grid-row:1/span 3;position:sticky;top:0;align-self:start;background:#fff;border:0;box-shadow:none;max-height:100vh;overflow-y:auto;scrollbar-width:thin}
+  .tools .in{max-width:none;margin:0;padding:36px 0 28px}
+  .tools .row{display:flex;flex-direction:column;align-items:stretch;gap:12px;max-width:none}
+  .tools .search{flex:none}
+  .search input{border:1px solid #d3cac5;border-radius:4px;padding:11px 12px;font-size:14.5px;background:#fff}
   .search input:focus{outline:2px solid var(--brown);outline-offset:0;border-color:var(--brown)}
-  .chips{flex-wrap:wrap;overflow:visible;justify-content:flex-start;gap:10px 28px;padding:18px 0 0}
-  .chips button,.bchips button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
-  .chips button[aria-pressed=true],.bchips button[aria-pressed=true]{background:none;color:#151515;border-bottom-color:var(--brown)}
-  .chips button:hover,.bchips button:hover{border-bottom-color:#cdb9ab}
-  .pricenote{margin:12px 0 0}
-  /* the list: sections like "Typical Products", cards like its pink tiles */
-  main{max-width:1160px;padding:0 24px 40px}
-  .cat,#results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 48px;align-items:start;margin:48px 0 0}
-  .cat h2,#results h2{grid-column:1/-1;margin:0 0 8px;font:400 32px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown);display:flex;align-items:baseline}
+  .switch{margin:0;align-self:flex-start;padding:4px 0;font:400 14px/1 var(--sans);letter-spacing:0;text-transform:none;color:#5e5e5e}
+  .chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:1px;padding:20px 0 0;overflow:visible;border-top:1px solid var(--line);margin-top:16px}
+  .chips button{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;text-align:left;border:0;border-radius:4px;background:none;color:#2b2b2b;padding:7px 10px;font:400 15px/1.3 var(--sans);letter-spacing:0;text-transform:none}
+  .chips button .n{display:inline;font-size:12.5px;color:#9b928d}
+  .chips button:hover{background:#f8f1ee}
+  .chips button[aria-pressed=true]{background:var(--tint);color:var(--brown);font-weight:600;box-shadow:inset 3px 0 0 var(--brown)}
+  .chips button[aria-pressed=true] .n{color:var(--brown)}
+  .pricenote{margin:16px 0 0;font-size:12.5px;line-height:1.5}
+  main.in{grid-column:2;max-width:none;margin:0;padding:36px 0 24px}
+  .catalog .empty{grid-column:2;max-width:none;margin:36px 0;padding:0;font-size:16px}
+  /* sections and cards */
+  .cat,#results{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin:0 0 52px}
+  #results{margin-top:0}
+  .cat h2,#results h2{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin:0 0 6px;font:400 30px/1.25 var(--serif);letter-spacing:.01em;color:#1b1b1b}
   .tag{display:inline;background:none;border:0;padding:0;transform:none;color:inherit;border-radius:0}
   .specials .tag{background:none;color:var(--brown)}
-  .count{font:400 13px var(--sans);letter-spacing:.18em;color:#767676;margin-left:18px}
-  .item{background:var(--tint);border:0;border-radius:0}
-  .item summary,.item.plain,.item summary:has(.thumb),.item.plain:has(.thumb){display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 24px 26px;gap:0;min-height:152px}
-  .thumb{width:84px;height:84px;margin:0 0 14px;border-radius:0}
-  .left{align-items:center;gap:4px}
-  .name,.item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em;color:#1b1b1b;padding:0}
-  .aka{font-size:15px;line-height:22px;color:#5e5e5e}
-  .right{align-items:center;margin-top:10px;gap:6px}
-  .src{max-width:none;text-align:center;font-size:11.5px;line-height:1.5;letter-spacing:.16em;text-transform:uppercase;color:var(--brown)}
-  .blogo{object-position:center;height:34px;max-width:150px}
-  .price{text-align:center}
-  .item summary::after{content:"Details";display:block;margin-top:14px;font:700 11px/1 var(--sans);letter-spacing:.214em;text-transform:uppercase;color:var(--brown)}
-  .item[open] summary::after{content:"Close"}
-  .item[open] summary .name{color:var(--brown)}
-  .body{margin:0 24px 24px;background:#fff;border:0;border-radius:0;padding:6px 22px 18px;text-align:left}
-  .body h3{margin:16px 0 4px;font:400 11.5px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
-  .body p{font-size:15px;line-height:24px;color:#454545}
-  .item[open] .gallery{margin:16px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;overflow:visible}
-  .item[open] .gallery img{flex:none;width:100%;border-radius:0}
-  .item[open] .gallery.one{grid-template-columns:1fr}
-  .nut span{border-radius:0}
-  .empty{max-width:1160px;padding:0 24px}
-  .brands{max-width:1160px;padding:40px 24px 8px;margin-top:40px;text-align:left}
+  .count{font:400 13px var(--sans);color:#9b928d;margin:0}
+  .item{background:#fff;border:1px solid #e9e1dc;border-radius:4px;transition:border-color .15s,box-shadow .15s}
+  details.item:hover{border-color:#c9b4a8;box-shadow:0 6px 18px rgba(79,46,35,.08)}
+  /* card: name and other names on the left, price on the right; source and "Details" underneath */
+  .item summary,.item.plain{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 14px;align-items:start;padding:16px 18px 15px;text-align:left}
+  .item summary:has(.thumb),.item.plain:has(.thumb){grid-template-columns:60px minmax(0,1fr) auto}
+  .thumb{grid-column:1;grid-row:1/span 2;width:60px;height:60px;border-radius:3px}
+  .left{grid-column:-3/-2;grid-row:1;gap:3px;align-items:flex-start}
+  .right{display:contents}
+  .right .price{grid-column:-2/-1;grid-row:1;justify-self:end}
+  .right .src,.right .blogo{grid-column:-3/-2;grid-row:2;align-self:center;justify-self:start}
+  .name,.item.plain .name{font:600 16.5px/1.35 var(--sans);letter-spacing:0;color:#1b1b1b;padding:0}
+  .item[open] summary .name{color:#1b1b1b}
+  .aka{font-size:14px;line-height:1.45;color:#706a67}
+  .right{align-items:flex-end;gap:6px;margin:0}
+  .src{max-width:none;text-align:left;font-size:10.5px;line-height:1.45;letter-spacing:.13em;text-transform:uppercase;color:var(--brown)}
+  .blogo{height:26px;max-width:110px;object-position:left center}
+  .price{text-align:right}
+  .price b{font-size:16.5px}
+  .price .qual{font-size:11px}
+  details.item summary::after{content:"Details \2192";grid-column:-2/-1;grid-row:2;align-self:center;justify-self:end;white-space:nowrap;font:600 12px/1 var(--sans);letter-spacing:.04em;color:#b29a8d;transition:color .15s}
+  details.item:hover summary::after{color:var(--brown)}
+  .item summary:focus-visible{outline:2px solid var(--brown);outline-offset:2px;border-radius:4px}
+  .cat .item .body,#results .item .body{display:none}
+  .brands{max-width:1160px;padding:40px 24px 8px;margin-top:24px;text-align:left;border-top:1px solid var(--line)}
   .brands h2{font:400 16px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown);margin:0 0 24px}
   .strip{justify-content:flex-start}
   .strip img{height:46px;max-width:180px}
-  /* footer: CONNECT WITH US, then copyright left and address right */
-  .foot{background:#fff;margin-top:40px;text-align:left;border-top:1px solid var(--line)}
+  /* footer, as on the original site */
+  .foot{background:#fff;margin-top:24px;text-align:left;border-top:1px solid var(--line)}
   .foot .in{max-width:1160px;padding:40px 24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:0 24px;font-size:12px}
   .foot h2{grid-column:1/-1;margin:0 0 24px;font:400 16px/22px var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown)}
   .foot .social{grid-column:1/-1;text-align:center;margin:0 0 56px}
@@ -680,6 +690,36 @@ body.prices .price{display:inline-block}
   .foot .addr{grid-column:2;grid-row:3;margin:0;text-align:right;font:400 12px/18px var(--sans);letter-spacing:.083em;text-transform:uppercase;color:#595959}
   .foot .addr .fn{display:block;margin-top:6px;text-transform:none;letter-spacing:0;color:#767676}
 }
+/* details panel (opens on desktop only) */
+.drawer{position:fixed;inset:0;z-index:50}
+.drawer .scrim{position:absolute;inset:0;background:rgba(21,21,21,.36);opacity:0;transition:opacity .18s}
+.dpanel{position:absolute;top:0;right:0;bottom:0;width:min(540px,100vw);background:#fff;box-shadow:-14px 0 44px rgba(0,0,0,.14);transform:translateX(28px);opacity:0;transition:transform .2s,opacity .2s;overflow-y:auto;overscroll-behavior:contain}
+.drawer.on .scrim{opacity:1}
+.drawer.on .dpanel{transform:none;opacity:1}
+.dclose{position:sticky;top:0;float:right;margin:10px 10px 0 0;width:44px;height:44px;border:0;border-radius:50%;background:#fff;font:300 32px/1 var(--sans);color:#151515;cursor:pointer;z-index:1}
+.dclose:hover{background:#f6efec}
+.dclose:focus-visible{outline:2px solid var(--brown);outline-offset:1px}
+#dbody{padding:40px 44px 56px}
+.dcat{margin:0 0 10px;font:400 12px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
+.dtop h2{margin:0 0 6px;font:400 36px/1.15 var(--serif);color:#1b1b1b}
+.daka{margin:0 0 4px;font-size:16px;line-height:1.5;color:#5e5e5e}
+.dmeta{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;margin:18px 0 8px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dmeta .price{text-align:left}
+.dmeta .price b{font-size:22px}
+.dmeta .src{max-width:none;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--brown)}
+.dmeta .blogo{height:34px;max-width:160px}
+.dcontent{background:none;border:0;padding:0;margin:0}
+.dcontent h3{margin:24px 0 6px;font:400 12px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
+.dcontent p{margin:0;font-size:16px;line-height:1.65;color:#333}
+.dcontent .fine{font-size:13.5px;color:#767676}
+.dcontent .from{margin-top:26px}
+.dcontent .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 6px;padding:0;overflow:visible}
+.dcontent .gallery.one{grid-template-columns:1fr}
+.dcontent .gallery img{width:100%;flex:none;border-radius:3px}
+.dcontent .nut{margin:6px 0}
+html.dopen{overflow:hidden}
+@media(max-width:1023px){.drawer{display:none!important}}
+@media(prefers-reduced-motion:reduce){.drawer .scrim,.dpanel{transition:none}}
 {{EXTRA_CSS}}
 </style>
 </head>
@@ -718,6 +758,13 @@ body.prices .price{display:inline-block}
 <p class="addr"><span class="street">262 State Street, Brewer, Maine 04412.</span> <span class="fn">{{FOOTNOTE}}</span></p>
 <p class="copy">Copyright © Emery's Meat &amp; Produce Brewer - All Rights Reserved.</p>
 </div></footer>
+<div class="drawer" id="drawer" hidden>
+<div class="scrim" data-close></div>
+<div class="dpanel" role="dialog" aria-modal="true" aria-labelledby="dtitle">
+<button type="button" class="dclose" data-close aria-label="Close">&times;</button>
+<div id="dbody"></div>
+</div>
+</div>
 </div>
 <script>
 (function(){
@@ -726,6 +773,45 @@ function openMenu(o){menu.hidden=!o;burger.setAttribute('aria-expanded',o?'true'
 burger.addEventListener('click',function(){openMenu(true);});
 closeBtn.addEventListener('click',function(){openMenu(false);});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!menu.hidden)openMenu(false);});
+/* On desktop a product's details open in a panel from the right; on phones they open in place. */
+var drawer=document.getElementById('drawer'),dbody=document.getElementById('dbody'),dlast=null;
+var wide=window.matchMedia?window.matchMedia('(min-width:1024px)'):{matches:false};
+function openDrawer(item){
+  var body=item&&item.querySelector('.body');if(!drawer||!body)return false;
+  dbody.innerHTML='';
+  var top=document.createElement('div');top.className='dtop';
+  var c=document.createElement('p');c.className='dcat';c.textContent=item.getAttribute('data-cat')||'';top.appendChild(c);
+  var h=document.createElement('h2');h.id='dtitle';h.textContent=item.querySelector('.name').textContent;top.appendChild(h);
+  var aka=item.querySelector('.akatxt');if(aka){var a=document.createElement('p');a.className='daka';a.textContent=aka.textContent;top.appendChild(a);}
+  var right=item.querySelector('.right');if(right&&right.children.length){var m=right.cloneNode(true);m.className='dmeta';top.appendChild(m);}
+  dbody.appendChild(top);
+  var b=body.cloneNode(true);b.className='dcontent';dbody.appendChild(b);
+  drawer.hidden=false;document.documentElement.classList.add('dopen');
+  drawer.querySelector('.dpanel').scrollTop=0;
+  requestAnimationFrame(function(){requestAnimationFrame(function(){drawer.classList.add('on');});});
+  dlast=item.querySelector('summary');
+  try{drawer.querySelector('.dclose').focus({preventScroll:true});}catch(e){}
+  return true;
+}
+function closeDrawer(){
+  if(!drawer||drawer.hidden)return;
+  drawer.classList.remove('on');document.documentElement.classList.remove('dopen');
+  setTimeout(function(){drawer.hidden=true;},200);
+  if(dlast){try{dlast.focus({preventScroll:true});}catch(e){}}
+}
+document.addEventListener('click',function(e){
+  var s=e.target.closest('details.item>summary');
+  if(s&&wide.matches&&!e.target.closest('a')){e.preventDefault();openDrawer(s.parentNode);return;}
+  if(e.target.closest('[data-close]')){closeDrawer();}
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&drawer&&!drawer.hidden){closeDrawer();return;}
+  if(e.key==='Tab'&&drawer&&!drawer.hidden){
+    var f=[].slice.call(drawer.querySelectorAll('button,a[href],[tabindex="0"]'));if(!f.length)return;
+    if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f[f.length-1].focus();}
+    else if(!e.shiftKey&&document.activeElement===f[f.length-1]){e.preventDefault();f[0].focus();}
+  }
+});
 {{SCRIPT}}
 })();
 </script>
@@ -738,7 +824,8 @@ INDEX_HEAD = r"""<div class="head"><div class="in">
 <p class="lede">Typical products, and what to do with them. Not everything is in every day. Call <a href="tel:2079222673">(207) 922-2673</a> to check on something specific.</p>
 </div></div>"""
 
-INDEX_CONTENT = r"""<div class="tools"><div class="in">
+INDEX_CONTENT = r"""<div class="catalog">
+<div class="tools"><div class="in">
 <div class="row">
 <label class="search"><span class="vh">Search products</span><input type="search" id="q" placeholder="Search a cut, like porterhouse" autocomplete="off"></label>
 {{SWITCH}}
@@ -748,6 +835,7 @@ INDEX_CONTENT = r"""<div class="tools"><div class="in">
 </div></div>
 <main class="in" id="list">{{SECTIONS}}<section id="results" hidden></section></main>
 <p class="empty in" id="empty" hidden>Nothing matches that. Try another word, or call the shop at (207) 922-2673.</p>
+</div>
 {{BRANDS}}"""
 
 INDEX_SCRIPT = r"""var q=document.getElementById('q'),chips=document.getElementById('chips'),empty=document.getElementById('empty');
@@ -803,18 +891,20 @@ function setPrices(on,fromUser){
   if(fromUser){try{localStorage.setItem(PKEY,on?'1':'0');}catch(e){}}
 }
 if(!document.querySelector('.price')){sws.forEach(function(b){b.hidden=true;});}
-q.addEventListener('input',apply);
+q.addEventListener('input',function(){if(cat&&q.value.trim()){cat='';[].forEach.call(chips.children,function(x){x.setAttribute('aria-pressed',x.getAttribute('data-cat')===''?'true':'false');});}apply();});
 chips.addEventListener('click',function(e){
   var b=e.target.closest('button'); if(!b)return;
   cat=b.dataset.cat;
   [].forEach.call(chips.children,function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
-  apply(); window.scrollTo({top:0});
+  apply();
+  var cl=document.querySelector('.catalog'),y=cl?cl.getBoundingClientRect().top+window.pageYOffset:0;
+  if(wide.matches){if(window.pageYOffset>y)window.scrollTo({top:y});}else{window.scrollTo({top:0});}
 });
 sws.forEach(function(b){b.addEventListener('click',function(){setPrices(b.getAttribute('aria-checked')!=='true',true);});});
 var hash=''; try{hash=location.hash;}catch(e){}
 var savedPrices=null; try{savedPrices=localStorage.getItem(PKEY);}catch(e){}
 setPrices(hash==='#prices'||savedPrices==='1');
-function openItem(id){var t=document.getElementById(id);if(t&&t.classList.contains('item')){if(t.tagName==='DETAILS')t.open=true;setTimeout(function(){t.scrollIntoView({block:'start'});window.scrollBy(0,-130);},50);}}
+function openItem(id){var t=document.getElementById(id);if(t&&t.classList.contains('item')){if(wide.matches&&openDrawer(t))return;if(t.tagName==='DETAILS')t.open=true;setTimeout(function(){t.scrollIntoView({block:'start'});window.scrollBy(0,-130);},50);}}
 try{var h=hash.slice(1);if(h&&h!=='prices'&&h.indexOf('/')<0)openItem(h);}catch(e){}"""
 
 
