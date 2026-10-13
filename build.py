@@ -382,7 +382,7 @@ def build(rows, demo=False):
         sections += (f'<section class="cat specials" data-cat="__specials__"><h2><span class="tag">On special</span>'
                      f'<span class="count">{len(specials)}</span></h2>{items}</section>')
     for c in cats:
-        rs = [r for r in regular if r["cat"] == c]
+        rs = sorted((r for r in regular if r["cat"] == c), key=lambda r: r["name"].lower())
         if not rs:
             continue
         items = ""
@@ -621,7 +621,7 @@ body.prices .price{display:inline-block}
   .specials .tag{background:none;color:var(--brown)}
   .count{font:400 13px var(--sans);letter-spacing:.18em;color:#767676;margin-left:18px}
   .item{background:var(--tint);border:0;border-radius:0}
-  .item summary,.item.plain,.item summary:has(.thumb),.item.plain:has(.thumb){display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 24px 26px;gap:0}
+  .item summary,.item.plain,.item summary:has(.thumb),.item.plain:has(.thumb){display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 24px 26px;gap:0;min-height:152px}
   .thumb{width:84px;height:84px;margin:0 0 14px;border-radius:0}
   .left{align-items:center;gap:4px}
   .name,.item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em;color:#1b1b1b;padding:0}

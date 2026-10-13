@@ -152,7 +152,7 @@ CSS = r"""
   .bchips button:hover{border-bottom-color:#cdb9ab}
   #blist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 32px;margin-top:26px;align-items:start}
   #blist .item{margin:0;padding:0;border:0;border-radius:0;background:var(--tint)}
-  #blist .item summary,#blist .item.plain{padding:26px 22px 24px}
+  #blist .item summary,#blist .item.plain{padding:26px 22px 24px;min-height:148px}
   #blist .name,#blist .item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em}
   #blist .body{margin:0 22px 22px}
   .section{padding-top:22px}
@@ -277,7 +277,7 @@ def build_beef(rows, demo=False):
     order = list(PRIMALS.keys()) + ["other"]
     cards = ""
     for key in order:
-        for r in [x for x in beef if x["primal"] == key]:
+        for r in sorted((x for x in beef if x["primal"] == key), key=lambda x: x["name"].lower()):
             gallery, thumb = process_photos(r)
             cards += item_html(r, gallery, thumb, id_prefix="b-", chart_link=False, extra=f'data-primal="{key}"')
     chips = '<button type="button" aria-pressed="true" data-p="">All</button>' + "".join(
