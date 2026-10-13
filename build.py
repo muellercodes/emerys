@@ -421,7 +421,7 @@ def build(rows, demo=False):
             for path, name, url in brands.CURRENT.all_logos())
         if strip:
             brand_strip = f'<section class="brands in"><h2>Brands we carry</h2><div class="strip">{strip}</div></section>'
-    switch = '<button type="button" class="switch" id="prices" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
+    switch = '<button type="button" class="switch" id="price-switch" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
     logo, ld = logo_and_ld(demo)
     return shell(title="What We Carry",
                  desc="Steaks, roasts, sausage, local pork, and more at Emery's Meat &amp; Produce in Brewer, Maine, with what each cut is and how to cook it.",
@@ -629,15 +629,15 @@ body.prices .price{display:inline-block}
   .lede a{color:var(--brown)}
   /* catalogue: sidebar + list */
   .catalog{display:grid;grid-template-columns:248px minmax(0,1fr);gap:0 56px;max-width:1160px;margin:0 auto;padding:0 24px;align-items:start}
-  .tools{grid-column:1;grid-row:1/span 3;position:sticky;top:0;align-self:start;background:#fff;border:0;box-shadow:none;max-height:100vh;overflow-y:auto;scrollbar-width:thin}
-  .tools .in{max-width:none;margin:0;padding:36px 0 28px}
+  .tools{grid-column:1;grid-row:1/span 3;position:sticky;top:0;align-self:start;background:#fff;border:0;box-shadow:none;max-height:100vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#e6dcd6 transparent}
+  .tools .in{max-width:none;margin:0;padding:30px 0 24px}
   .tools .row{display:flex;flex-direction:column;align-items:stretch;gap:12px;max-width:none}
   .tools .search{flex:none}
   .search input{border:1px solid #d3cac5;border-radius:4px;padding:11px 12px;font-size:14.5px;background:#fff}
   .search input:focus{outline:2px solid var(--brown);outline-offset:0;border-color:var(--brown)}
   .switch{margin:0;align-self:flex-start;padding:4px 0;font:400 14px/1 var(--sans);letter-spacing:0;text-transform:none;color:#5e5e5e}
-  .chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:1px;padding:20px 0 0;overflow:visible;border-top:1px solid var(--line);margin-top:16px}
-  .chips button{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;text-align:left;border:0;border-radius:4px;background:none;color:#2b2b2b;padding:7px 10px;font:400 15px/1.3 var(--sans);letter-spacing:0;text-transform:none}
+  .chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:1px;padding:14px 0 0;overflow:visible;border-top:1px solid var(--line);margin-top:14px}
+  .chips button{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;text-align:left;border:0;border-radius:4px;background:none;color:#2b2b2b;padding:5px 10px;font:400 14.5px/1.3 var(--sans);letter-spacing:0;text-transform:none}
   .chips button .n{display:inline;font-size:12.5px;color:#9b928d}
   .chips button:hover{background:#f8f1ee}
   .chips button[aria-pressed=true]{background:var(--tint);color:var(--brown);font-weight:600;box-shadow:inset 3px 0 0 var(--brown)}
