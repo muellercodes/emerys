@@ -249,7 +249,8 @@ def slug(n): return re.sub(r"[^a-z0-9]+", "-", n.lower()).strip("-")
 PLACEHOLDER = ("data:image/svg+xml;utf8," + "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'>"
     "<rect width='400' height='300' fill='%23f3ece5'/><rect x='0.5' y='0.5' width='399' height='299' fill='none' stroke='%23cdb9ab' stroke-dasharray='6 5'/>"
     "<text x='200' y='158' text-anchor='middle' font-family='Georgia,serif' font-size='22' fill='%236b4031'>Photo goes here</text></svg>")
-DEMO_PHOTOS = {"Ribeye steak": [PLACEHOLDER, PLACEHOLDER]}   # delete once real photos exist
+DEMO_PHOTOS = {"Ribeye steak": [PLACEHOLDER, PLACEHOLDER]}   # local demo only, never published
+DEMO_MODE = False
 
 _PHOTO_CACHE = {}
 def process_photos(p):
@@ -263,7 +264,7 @@ def process_photos(p):
 
 def _process_photos(p):
     if not p["photos"]:
-        demo = DEMO_PHOTOS.get(p["name"])
+        demo = DEMO_PHOTOS.get(p["name"]) if DEMO_MODE else None
         return (demo, demo[0]) if demo else ([], None)
     from PIL import Image, ImageOps
     try:
@@ -401,7 +402,7 @@ def build(rows, demo=False):
     switch = ('<button type="button" class="switch" id="prices" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
               if demo else "")
     logo, ld = logo_and_ld(demo)
-    return shell(title="What we carry",
+    return shell(title="What We Carry",
                  desc="Steaks, roasts, sausage, local pork, and more at Emery's Meat &amp; Produce in Brewer, Maine, with what each cut is and how to cook it.",
                  head_block=INDEX_HEAD, content=INDEX_CONTENT.replace("{{CHIPS}}", chips).replace("{{SECTIONS}}", sections)
                                                              .replace("{{SWITCH}}", switch).replace("{{BRANDS}}", brand_strip),
@@ -535,7 +536,7 @@ main{padding:6px 16px 30px}
 .name{font-weight:600;font-size:17px;padding-top:1px}
 .item.plain .name{font-weight:500}
 .right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.src{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.src{font-size:12.5px;color:var(--muted);text-align:right;max-width:13em;overflow-wrap:anywhere}
 .left{display:flex;flex-direction:column;gap:1px;min-width:0}
 .aka{font-size:13.5px;color:var(--muted)}
 .aka:empty{display:none}
@@ -577,34 +578,83 @@ body.prices .price{display:inline-block}
 .strip{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:18px 26px}
 .strip img{height:38px;width:auto;max-width:150px;object-fit:contain}
 .strip a{display:block}
-/* ---------- desktop ---------- */
-@media(min-width:1000px){
-  .in{max-width:1120px}
-  .head .in{padding:56px 24px 46px;max-width:760px}
-  .lede{font-size:17.5px}
-  .tools .in{padding:14px 24px 8px;display:grid;grid-template-columns:minmax(0,420px) 1fr auto;gap:0 24px;align-items:center}
-  .tools .row{grid-column:1}
-  .chips{grid-column:2/4;justify-self:end;flex-wrap:wrap;justify-content:flex-end;overflow:visible;padding:0}
-  .pricenote{grid-column:1/4;margin:8px 0 2px}
-  main{padding:6px 24px 40px}
-  .cat h2{margin-bottom:12px}
-  /* one row of cards per category, two across, three on a wide screen */
-  .cat .item,#results .item{border:1px solid var(--line);border-radius:5px;background:#fff}
-  .cat,#results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
-  .cat h2,#results h2{grid-column:1/-1}
-  .cat .item summary,.cat .item.plain,#results .item summary,#results .item.plain{padding:14px 16px}
-  .cat .item[open],#results .item[open]{border-color:#cdb9ab;box-shadow:0 1px 0 rgba(107,64,49,.06)}
-  .body{margin:0 14px 14px;background:var(--tint)}
-  .item[open] .gallery{margin:10px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;overflow:visible}
-  .item[open] .gallery img{flex:none;width:100%}
+/* ---------- desktop: the look of emerysmeatbrewer.com at full width ----------
+   Measured off the live GoDaddy site at 1440px: 1160px container with 24px gutters, the
+   200px logo centered with the phone number level with it on the right, the nav below in
+   14px spaced capitals with a thin brown underline on the current page, Playfair 44px
+   page titles set left, #faf2f0 cards with centered Open Sans titles, 12px spaced-capital
+   footer. Below 1024px none of this applies and the approved phone layout is untouched. */
+@media(min-width:1024px){
+  .in{max-width:1160px}
+  /* header */
+  .site{max-width:1160px;margin:0 auto;padding:56px 24px 16px;position:relative}
+  .site .phone{position:absolute;right:24px;top:141px;font:400 22px/33px var(--sans);letter-spacing:0}
+  .site .bar{margin-top:0;min-height:200px}
+  .site .logo img{height:200px;width:auto}
+  .site nav.desk{border-top:0;margin:18px 0 0;padding:0;gap:32px}
+  .site nav.desk a{font:400 14px/24px var(--sans);letter-spacing:.214em;color:#151515;padding:0 0 4px;border-bottom:1px solid transparent}
+  .site nav.desk a[aria-current=page]{font-weight:400;border-bottom-color:var(--brown)}
+  .site nav.desk a:hover{border-bottom-color:#cdb9ab}
+  /* page title, like "Our Meats and Produce" */
+  .head{background:#fff;text-align:left}
+  .head .in{max-width:1160px;padding:40px 24px 0}
+  .eyebrow{display:none}
+  h1{margin:0 0 16px;font:400 44px/1.2 var(--serif);letter-spacing:.023em;color:#1b1b1b}
+  .lede{margin:0;max-width:46em;font-size:16px;line-height:24px;color:#5e5e5e}
+  .lede a{color:var(--brown)}
+  /* search, and the categories as a second row of nav-style links */
+  .tools{border-bottom:0;box-shadow:0 1px 0 var(--line)}
+  .tools .in{max-width:1160px;padding:24px 24px 14px;display:block}
+  .tools .row{max-width:560px}
+  .search input{border:1px solid #c7c3c1;border-radius:0;padding:13px 16px;font-size:16px}
+  .search input:focus{outline:2px solid var(--brown);outline-offset:0;border-color:var(--brown)}
+  .chips{flex-wrap:wrap;overflow:visible;justify-content:flex-start;gap:10px 28px;padding:18px 0 0}
+  .chips button,.bchips button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+  .chips button[aria-pressed=true],.bchips button[aria-pressed=true]{background:none;color:#151515;border-bottom-color:var(--brown)}
+  .chips button:hover,.bchips button:hover{border-bottom-color:#cdb9ab}
+  .pricenote{margin:12px 0 0}
+  /* the list: sections like "Typical Products", cards like its pink tiles */
+  main{max-width:1160px;padding:0 24px 40px}
+  .cat,#results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 48px;align-items:start;margin:48px 0 0}
+  .cat h2,#results h2{grid-column:1/-1;margin:0 0 8px;font:400 32px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown);display:flex;align-items:baseline}
+  .tag{display:inline;background:none;border:0;padding:0;transform:none;color:inherit;border-radius:0}
+  .specials .tag{background:none;color:var(--brown)}
+  .count{font:400 13px var(--sans);letter-spacing:.18em;color:#767676;margin-left:18px}
+  .item{background:var(--tint);border:0;border-radius:0}
+  .item summary,.item.plain,.item summary:has(.thumb),.item.plain:has(.thumb){display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 24px 26px;gap:0}
+  .thumb{width:84px;height:84px;margin:0 0 14px;border-radius:0}
+  .left{align-items:center;gap:4px}
+  .name,.item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em;color:#1b1b1b;padding:0}
+  .aka{font-size:15px;line-height:22px;color:#5e5e5e}
+  .right{align-items:center;margin-top:10px;gap:6px}
+  .src{max-width:none;text-align:center;font-size:11.5px;line-height:1.5;letter-spacing:.16em;text-transform:uppercase;color:var(--brown)}
+  .blogo{object-position:center;height:34px;max-width:150px}
+  .price{text-align:center}
+  .item summary::after{content:"Details";display:block;margin-top:14px;font:700 11px/1 var(--sans);letter-spacing:.214em;text-transform:uppercase;color:var(--brown)}
+  .item[open] summary::after{content:"Close"}
+  .item[open] summary .name{color:var(--brown)}
+  .body{margin:0 24px 24px;background:#fff;border:0;border-radius:0;padding:6px 22px 18px;text-align:left}
+  .body h3{margin:16px 0 4px;font:400 11.5px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
+  .body p{font-size:15px;line-height:24px;color:#454545}
+  .item[open] .gallery{margin:16px 0 4px;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;overflow:visible}
+  .item[open] .gallery img{flex:none;width:100%;border-radius:0}
   .item[open] .gallery.one{grid-template-columns:1fr}
-  .blogo{height:30px;max-width:140px}
-  .brands{padding:34px 24px 10px;margin-top:34px}
+  .nut span{border-radius:0}
+  .empty{max-width:1160px;padding:0 24px}
+  .brands{max-width:1160px;padding:40px 24px 8px;margin-top:40px;text-align:left}
+  .brands h2{font:400 16px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown);margin:0 0 24px}
+  .strip{justify-content:flex-start}
   .strip img{height:46px;max-width:180px}
-  .empty{max-width:1120px;padding:0 24px}
-}
-@media(min-width:1400px){
-  .cat,#results{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* footer: CONNECT WITH US, then copyright left and address right */
+  .foot{background:#fff;margin-top:40px;text-align:left;border-top:1px solid var(--line)}
+  .foot .in{max-width:1160px;padding:40px 24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:0 24px;font-size:12px}
+  .foot h2{grid-column:1/-1;margin:0 0 24px;font:400 16px/22px var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown)}
+  .foot .social{grid-column:1/-1;text-align:center;margin:0 0 56px}
+  .foot .social a{display:inline-block;margin:0 8px;padding:11px 22px;border:1px solid var(--brown);color:var(--brown);text-decoration:none;font:700 12px/1 var(--sans);letter-spacing:.214em;text-transform:uppercase}
+  .foot .social a:hover{background:var(--brown);color:#fff}
+  .foot .copy{grid-column:1;grid-row:3;margin:0;font:400 12px/18px var(--sans);letter-spacing:.083em;text-transform:uppercase;color:#595959}
+  .foot .addr{grid-column:2;grid-row:3;margin:0;text-align:right;font:400 12px/18px var(--sans);letter-spacing:.083em;text-transform:uppercase;color:#595959}
+  .foot .addr .fn{display:block;margin-top:6px;text-transform:none;letter-spacing:0;color:#767676}
 }
 {{EXTRA_CSS}}
 </style>
@@ -640,9 +690,9 @@ body.prices .price{display:inline-block}
 {{CONTENT}}
 <footer class="foot"><div class="in">
 <h2>Connect With Us</h2>
-<p><a href="https://www.facebook.com/EmerysMeatAndProduceBrewer/">Facebook</a> &nbsp; <a href="https://www.yelp.com/biz/suLFSAX7XvzPG4EKU0USgg">Yelp</a></p>
-<p>262 State Street, Brewer, Maine 04412. {{FOOTNOTE}}</p>
-<p>Copyright © Emery's Meat &amp; Produce Brewer - All Rights Reserved.</p>
+<p class="social"><a href="https://www.facebook.com/EmerysMeatAndProduceBrewer/">Facebook</a> &nbsp; <a href="https://www.yelp.com/biz/suLFSAX7XvzPG4EKU0USgg">Yelp</a></p>
+<p class="addr"><span class="street">262 State Street, Brewer, Maine 04412.</span> <span class="fn">{{FOOTNOTE}}</span></p>
+<p class="copy">Copyright © Emery's Meat &amp; Produce Brewer - All Rights Reserved.</p>
 </div></footer>
 </div>
 <script>
@@ -660,7 +710,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!menu.hidde
 
 INDEX_HEAD = r"""<div class="head"><div class="in">
 <p class="eyebrow">Emery's Meat &amp; Produce, Brewer</p>
-<h1>What we carry</h1>
+<h1>What We Carry</h1>
 <p class="lede">Typical products, and what to do with them. Not everything is in every day. Call <a href="tel:2079222673">(207) 922-2673</a> to check on something specific.</p>
 </div></div>"""
 
@@ -747,6 +797,7 @@ if __name__ == "__main__":
     # but with no price switch, no placeholder logos and no demo file. Locally it is the full demo.
     public = os.environ.get("GITHUB_ACTIONS") == "true" or os.environ.get("PUBLIC") == "1"
     demo = not live and not public
+    DEMO_MODE = demo
     if live:
         print("Reading catalogue from Notion")
         rows = notion_rows()

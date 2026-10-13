@@ -130,20 +130,51 @@ CSS = r"""
 .basics b{display:block;margin-bottom:2px}
 .basics span{color:var(--muted);font-size:15px}
 @media(max-width:480px){.cols{grid-template-columns:1fr}.tabs button{font-size:13px;padding:10px 2px}}
-/* ---------- desktop: the chart stays put on the left, everything else scrolls beside it ---------- */
-@media(min-width:1000px){
-  .wrap{max-width:1120px;padding:26px 24px 0;display:grid;grid-template-columns:400px minmax(0,1fr);gap:0 40px;align-items:start}
-  .chartcard{grid-column:1;grid-row:1/span 20;position:sticky;top:22px;padding:18px 16px 14px}
-  .blurb{font-size:16px;margin-top:12px}
+/* ---------- desktop (1024px and up): the original site's look, with the chart pinned on
+   the left and the tabs, cuts, comparator and basics beside it. ---------- */
+@media(min-width:1024px){
+  .wrap{max-width:1160px;padding:40px 24px 0;display:grid;grid-template-columns:380px minmax(0,1fr);gap:0 48px;align-items:start}
+  .chartcard{grid-column:1;grid-row:1/span 20;position:sticky;top:24px;background:var(--tint);border:0;border-radius:0;padding:24px 22px 20px}
+  .chart .primal path{fill:#fff}
+  .chart .primal:hover path{fill:#ecdcd4}
+  .chart .neutral path{fill:#e3d6cf}
+  .blurb{font-size:15px;line-height:24px;margin:14px 2px 0;color:#5e5e5e}
   .tabs,.tab{grid-column:2}
-  .tabs{margin:0 0 16px}
-  .tabs button{padding:12px 6px;font-size:15px}
-  #blist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;align-items:start}
-  #blist .item{margin:0}
-  .bchips{padding:12px 0 2px}
-  .section h2{font-size:30px}
-  .cmp select{font-size:16px}
-  .basics li{padding:14px 0}
+  .tabs{margin:0 0 6px;gap:32px;border-bottom:1px solid var(--line)}
+  .tabs button{flex:none;border:0;border-bottom:1px solid transparent;margin-bottom:-1px;border-radius:0;background:none;color:#151515;padding:0 0 10px;font:400 14px/24px var(--sans);letter-spacing:.214em;text-transform:uppercase}
+  .tabs button[aria-selected=true]{background:none;color:#151515;font-weight:400;border-bottom-color:var(--brown)}
+  .tabs button:hover{border-bottom-color:#cdb9ab}
+  .btools{padding-top:18px}
+  .btools .row{max-width:520px}
+  .bchips{gap:10px 26px;padding:18px 0 4px}
+  .bchips button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+  .bchips button[aria-pressed=true]{background:none;color:#151515;border-bottom-color:var(--brown)}
+  .bchips button:hover{border-bottom-color:#cdb9ab}
+  #blist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 32px;margin-top:26px;align-items:start}
+  #blist .item{margin:0;padding:0;border:0;border-radius:0;background:var(--tint)}
+  #blist .item summary,#blist .item.plain{padding:26px 22px 24px}
+  #blist .name,#blist .item.plain .name{font:400 20px/1.35 var(--sans);letter-spacing:.045em}
+  #blist .body{margin:0 22px 22px}
+  .section{padding-top:22px}
+  .section h2{margin:0 0 6px;font:400 24px/1.4 var(--sans);letter-spacing:.125em;text-transform:uppercase;color:var(--brown)}
+  .section .sub{font-size:16px;line-height:24px;color:#5e5e5e;margin:0 0 22px}
+  .chips.wrap2{gap:10px 26px;padding:0 0 18px}
+  .chips.wrap2 button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+  .chips.wrap2 button[aria-pressed=true]{border-bottom-color:var(--brown)}
+  .panel{background:var(--tint);border:0;border-radius:0;padding:26px 28px 16px}
+  .panel h3{font:400 20px/1.35 var(--sans);letter-spacing:.045em;margin:0 0 6px}
+  .panel p{font-size:15px;line-height:24px;color:#5e5e5e}
+  .picks li{border-top-color:#ead9d1}
+  .cmp{gap:24px;margin-bottom:24px}
+  .cmp select{border:1px solid #c7c3c1;border-radius:0;padding:12px 12px;font-size:16px}
+  .cols{gap:24px}
+  .col{background:var(--tint);border:0;border-radius:0;padding:26px 24px 20px}
+  .col h3{font:400 20px/1.35 var(--sans);letter-spacing:.045em;margin:0 0 10px}
+  .col h4{margin:14px 0 4px;font:400 11.5px/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--brown)}
+  .col p{font-size:15px;line-height:24px;color:#454545}
+  .basics li{padding:18px 0;border-top-color:var(--line)}
+  .basics b{font:400 18px/1.4 var(--sans);letter-spacing:.045em;margin-bottom:4px}
+  .basics span{font-size:15px;line-height:24px;color:#5e5e5e}
 }
 """
 
