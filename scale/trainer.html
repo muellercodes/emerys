@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emery's scale simulator</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{
+  --housing:#d9d7d1; --panel:#161616; --key:#f5f3ed; --key-blue:#dde6ee; --key-pink:#f2d8d3;
+  --ink:#171717; --fn:#3b7bd4; --ok:#2c8a4c; --bad:#b53a2b; --muted:#5d5b56; --hit:#e6b800;
+  --led:#38f0d2; --ledbg:#0a0d0c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--housing);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:10px 8px 48px}
+@media (min-width:900px){.wrap{max-width:980px}}
+h1{font-size:17px;font-weight:600;margin:4px 2px 8px}
+.row{display:flex;gap:4px;margin-bottom:6px}
+.row button{flex:1;padding:8px 2px;border:1px solid #b6b3ac;background:#ebe9e3;border-radius:4px;font:600 12px inherit;font-family:inherit;color:var(--ink)}
+.row button[aria-pressed=true]{background:var(--panel);color:#fff;border-color:var(--panel)}
+button:focus-visible{outline:3px solid var(--fn);outline-offset:1px}
+
+/* display */
+.disp{background:#1d1d1d;border-radius:8px;padding:8px 8px 6px;margin-bottom:8px;border:3px solid #cfcdc7}
+.win{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:6px}
+.w{background:var(--ledbg);border-radius:4px;padding:4px 6px 5px;min-height:58px}
+.w .lab{display:flex;justify-content:space-between;font:600 9px inherit;color:#bdbdbd;letter-spacing:.04em}
+.w .lab span{background:#333;color:#fff;padding:0 4px;border-radius:2px}
+.w .v{font:700 24px/1.1 "SF Mono",Menlo,Consolas,monospace;color:var(--led);text-align:right;letter-spacing:.06em;text-shadow:0 0 6px rgba(56,240,210,.6);margin-top:3px;white-space:nowrap;overflow:hidden}
+.w .v.txt{font-size:16px;text-align:left;letter-spacing:.02em}
+.ind{display:flex;gap:10px;margin-top:6px;padding:0 2px}
+.ind span{font:600 9px inherit;color:#555;letter-spacing:.06em}
+.ind span.on{color:var(--led);text-shadow:0 0 5px rgba(56,240,210,.6)}
+.note{font-size:12.5px;color:#e6e4de;background:#2a2a2a;border-radius:4px;padding:5px 8px;margin-top:6px;min-height:26px}
+
+/* keypad area */
+.machine{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:900px){.machine{grid-template-columns:1.8fr 1fr}}
+.scale{background:var(--panel);border-radius:10px;padding:8px 6px 10px}
+.fn{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-bottom:5px}
+.fn button{height:26px;border:0;border-radius:3px;background:var(--fn);color:#fff;font:600 8px inherit;font-family:inherit;line-height:1;padding:0}
+.fn button.dk{background:#2b2b2b;border:1px solid #9a9a2a}
+.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px}
+.key{position:relative;height:54px;border:0;border-radius:3px;background:var(--key);padding:13px 1px 2px;
+  font:8.5px/1.15 Georgia,"Times New Roman",serif;font-weight:700;color:var(--ink);text-align:center;white-space:pre-line;overflow:hidden;word-break:break-word}
+.key .n{position:absolute;top:2px;right:3px;font:7.5px Georgia,serif;color:#333}
+.key .l{position:absolute;top:2px;left:3px;font:7.5px Georgia,serif;color:#333}
+.key.blank{background:#e9e7e1;opacity:.5}
+.key.unit{background:var(--key-pink)}
+.key.tint{background:var(--key-blue)}
+.ok{background:#bfe7c9 !important;outline:2px solid var(--ok);outline-offset:-1px}
+.bad{background:#f3c3bb !important;outline:2px solid var(--bad);outline-offset:-1px}
+.hit{background:#fff0a8 !important;outline:2px solid var(--hit);outline-offset:-1px}
+.next{outline:3px solid var(--hit) !important;outline-offset:-2px;box-shadow:0 0 0 3px rgba(230,184,0,.35)}
+.legend{font-size:11px;color:#cfcdc7;margin-top:6px}
+
+.numpad{background:var(--panel);border-radius:10px;padding:8px 6px 10px}
+.np{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.np button{height:48px;border:0;border-radius:4px;background:#fff;font:700 20px inherit;font-family:inherit;color:#111}
+.np button.b{background:var(--fn);color:#fff;font-size:11px;font-weight:700}
+.np button.y{background:#e8e42a;color:#111;font-size:18px}
+.np button.p{background:#e9e4d6;color:#111;font-size:11px}
+.np button .fr{display:block;font-size:11px;line-height:1;border-bottom:1px solid #fff;width:12px;margin:0 auto 2px}
+.weights{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.weights button{flex:1;min-width:52px;padding:8px 4px;border:1px solid #444;background:#2b2b2b;color:#eee;border-radius:4px;font:600 12px inherit;font-family:inherit}
+.weights button.off{background:#444}
+.weights .cap{width:100%;font-size:11px;color:#cfcdc7;margin-bottom:2px}
+
+/* side panels */
+.pane{display:none;background:#fff;border:1px solid #c7c4bd;border-radius:6px;padding:10px 12px;margin-bottom:8px}
+.pane.on{display:block}
+.pane h2{font-size:14px;margin:0 0 6px}
+.pane p{margin:5px 0;font-size:14px}
+.pane select{width:100%;padding:9px 6px;border:1px solid #b6b3ac;border-radius:6px;font:14px inherit;font-family:inherit;background:#fff;margin-bottom:6px}
+.pane .bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
+.pane .bar button{padding:6px 12px;border:1px solid #b6b3ac;background:#fff;border-radius:4px;font:600 13px inherit;font-family:inherit;color:var(--ink)}
+.pane .bar button[aria-pressed=true]{background:var(--panel);color:#fff}
+.goal{font-size:15px;font-weight:600}
+.hint{font-size:13.5px;background:#fff8dc;border-left:3px solid var(--hit);padding:6px 10px;margin-top:6px;border-radius:0 4px 4px 0}
+.hint.good{background:#eef7ef;border-color:var(--ok)}
+.hint.err{background:#fbeae7;border-color:var(--bad)}
+.steps{list-style:none;padding:0;margin:8px 0 0;font-size:12.5px;color:var(--muted)}
+.steps li{padding:2px 0 2px 18px;position:relative}
+.steps li::before{content:"";position:absolute;left:2px;top:7px;width:8px;height:8px;border-radius:50%;background:#ddd}
+.steps li.done::before{background:var(--ok)}
+.steps li.cur{color:var(--ink);font-weight:600}
+.steps li.cur::before{background:var(--hit)}
+.label{background:#fff;color:#111;border:1px dashed #999;border-radius:3px;padding:8px 10px;margin-top:8px;font:12px/1.35 "SF Mono",Menlo,monospace;max-width:260px}
+.label .sn{font:700 13px Georgia,serif;text-align:center;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:4px}
+.label .pn{font-weight:700;font-size:13px;margin-bottom:3px}
+.label .r{display:flex;justify-content:space-between}
+.label .tot{border-top:1px solid #333;margin-top:3px;padding-top:3px;font-weight:700}
+.prompt .ask{font-size:12px;color:var(--muted)}
+.prompt .item{font-size:19px;font-weight:600;line-height:1.2;margin-top:2px}
+.prompt .fb{font-size:13px;margin-top:6px;min-height:18px}
+.fb.ok{color:var(--ok);background:none !important;outline:none !important} .fb.bad{color:var(--bad);background:none !important;outline:none !important}
+.search input{width:100%;padding:10px 12px;border:1px solid #b6b3ac;border-radius:6px;font:16px inherit;font-family:inherit}
+.results{list-style:none;margin:6px 0 0;padding:0}
+.results li{padding:8px 10px;background:#f7f7f5;border:1px solid #d6d3cc;border-radius:4px;margin-top:4px;font-size:14px}
+.results li b{display:inline-block;min-width:22px;color:var(--fn)}
+.results li small{color:var(--muted);margin-left:6px}
+.ref{margin-top:14px}
+.ref details{background:#fff;border:1px solid #c7c4bd;border-radius:6px;margin-bottom:6px}
+.ref summary{padding:10px 12px;font-weight:600;font-size:14px;cursor:pointer}
+.ref .body{padding:0 12px 12px;font-size:14px}
+.ref ol{padding-left:22px;margin:6px 0}.ref li{margin:2px 0}
+.ref table{border-collapse:collapse;width:100%;font-size:12.5px}
+.ref th,.ref td{border-bottom:1px solid #e3e1db;padding:5px 4px;text-align:left;vertical-align:top}
+.ref th{color:var(--muted);font-weight:600}
+.foot{font-size:12px;color:var(--muted);margin:10px 2px 0}
+.chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #c7c4bd;border-radius:20px;padding:6px 12px;margin-bottom:8px;font-size:13px;cursor:pointer;user-select:none}
+.chip b{font-size:14px}.chip .av{font-size:20px;line-height:1}.chip .rk{margin-left:auto;color:var(--muted);font-size:12px}
+.rush .item{font-size:22px;font-weight:700;text-align:center;min-height:32px;line-height:1.2}
+.rush .fb{text-align:center;font-size:13px;min-height:18px;margin-top:4px}
+.tbar{height:8px;background:#e6e4de;border-radius:4px;overflow:hidden;margin:6px 0}
+.tbar i{display:block;height:100%;background:var(--ok);width:100%;transition:width .2s linear}
+.tbar i.low{background:var(--bad)}
+.rstat{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.rstat b{font-size:18px;color:var(--ink)}
+.pop{position:fixed;left:50%;top:38%;transform:translateX(-50%);font:800 24px -apple-system,sans-serif;color:var(--ok);pointer-events:none;animation:pop .9s ease-out forwards;z-index:9;text-shadow:0 1px 0 #fff}
+.pop.bad{color:var(--bad)}
+@keyframes pop{0%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-80px)}}
+.shake{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.board{list-style:none;padding:0;margin:6px 0 0}
+.board li{display:flex;gap:8px;padding:6px 8px;border-bottom:1px solid #eee;font-size:14px;align-items:center}
+.board li b{min-width:22px;color:var(--muted)}.board li .sc{margin-left:auto;font-weight:700}.board li small{color:var(--muted)}
+.board li.me{background:#fff8dc}
+.conf{position:fixed;top:-12px;width:8px;height:12px;pointer-events:none;animation:fall 1.9s linear forwards;z-index:9;border-radius:2px}
+@keyframes fall{to{transform:translateY(105vh) rotate(600deg);opacity:.7}}
+.badges span{display:inline-block;background:#f1f2f3;border-radius:12px;padding:3px 9px;margin:2px;font-size:12px;color:#999}
+.badges span.got{background:#fff0a8;color:var(--ink)}
+.plist button{display:inline-block;margin:3px 4px 3px 0;padding:6px 10px;border:1px solid #b6b3ac;background:#fff;border-radius:16px;font:600 13px inherit;font-family:inherit}
+.plist button[aria-pressed=true]{background:var(--panel);color:#fff}
+.avs button{font-size:22px;padding:4px 6px;border:1px solid transparent;background:none;border-radius:8px;margin:1px}
+.avs button[aria-pressed=true]{border-color:var(--hit);background:#fff0a8}
+.pane input[type=text]{width:100%;padding:9px 10px;border:1px solid #b6b3ac;border-radius:6px;font:16px inherit;font-family:inherit}
+.result{background:#f6f7f8;border-radius:6px;padding:10px 12px;margin-top:8px;font-size:14px}
+.result .big{font:800 30px/1 -apple-system,sans-serif;margin:2px 0 6px}
+.result .msg{font-weight:600}
+.lock[hidden]{display:none}
+.lock{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#fff;border:1px solid #c7c4bd;border-radius:6px;padding:8px 10px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.lock input{flex:1;min-width:120px;padding:8px 10px;border:1px solid #b6b3ac;border-radius:6px;font:16px inherit;font-family:inherit}
+.lock button{padding:8px 12px;border:0;border-radius:6px;background:var(--panel);color:#fff;font:600 13px inherit;font-family:inherit}
+.lock .msg{width:100%;font-size:12px}
+.lock .msg.bad{color:var(--bad);background:none!important;outline:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Emery's scale simulator</h1>
+  <form class="lock" id="lock" hidden autocomplete="off">
+    <span>Prices are hidden on this public page.</span>
+    <input id="code" type="password" placeholder="Shop code" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Shop code">
+    <button type="submit">Show prices</button>
+    <span class="msg" id="lockMsg"></span>
+  </form>
+  <div class="chip" id="chip" role="button" tabindex="0"></div>
+  <div class="row" id="tabs"></div>
+  <div class="row" id="modes">
+    <button data-m="sell" aria-pressed="true">Sell</button>
+    <button data-m="proc" aria-pressed="false">Procedures</button>
+    <button data-m="keys" aria-pressed="false">Practice</button>
+    <button data-m="rush" aria-pressed="false">Rush</button>
+    <button data-m="lookup" aria-pressed="false">Look up</button>
+  </div>
+
+  <div class="disp">
+    <div class="win">
+      <div class="w"><div class="lab">WEIGHT <span>lb</span></div><div class="v" id="dW">0.00</div></div>
+      <div class="w"><div class="lab">UNIT PRICE <span>$/lb</span></div><div class="v" id="dU">0.00</div></div>
+      <div class="w"><div class="lab">TOTAL PRICE <span>$</span></div><div class="v" id="dT"></div></div>
+    </div>
+    <div class="ind"><span id="iZERO">ZERO</span><span id="iNET">NET</span><span id="iSAVE">SAVE</span><span id="iAUTO">AUTO</span><span id="iSHIFT">SHIFT</span><span id="iPROG">PROG</span></div>
+    <div class="note" id="note">Ready. Tap a weight, hit a product key, press PRT.</div>
+  </div>
+
+  <div class="pane on" id="p-sell">
+    <h2>Sell mode</h2>
+    <p>Tap a weight below the keypad to put something on the platter. Hit the product key (or type its number and press PLU), then PRT/* to print. C clears. Type digits to set a unit price by hand.</p>
+    <div id="lastLabel"></div>
+  </div>
+
+  <div class="pane" id="p-proc">
+    <select id="procSel"></select>
+    <div class="bar">
+      <button id="guided" aria-pressed="true">Guided</button>
+      <button id="test" aria-pressed="false">Test</button>
+      <button id="restart">New task</button>
+      <span id="pstat"></span>
+    </div>
+    <div class="goal" id="goal"></div>
+    <div class="hint" id="hint"></div>
+    <ul class="steps" id="steps"></ul>
+  </div>
+
+  <div class="pane" id="p-keys">
+    <div class="prompt"><div class="ask" id="ask">Ring up on this scale</div><div class="item" id="item"></div><div class="fb" id="fb"></div></div>
+    <div class="bar"><span id="score">0 of 0</span><label><input type="checkbox" id="allScales"> all scales</label><button id="next">Next</button></div>
+  </div>
+
+  <div class="pane rush" id="p-rush">
+    <div class="rstat"><span>time <b id="rTime">60</b></span><span>streak <b id="rStreak">0</b></span><span>score <b id="rScore">0</b></span></div>
+    <div class="tbar"><i id="rBar"></i></div>
+    <div class="item" id="rItem">60 seconds. Hit as many keys as you can.</div>
+    <div class="fb" id="rFb">100 a key, up to +100 for speed, x2 at a 5 streak, x3 at 10.</div>
+    <div class="bar"><button id="rStart" class="pri">Start</button><label><input type="checkbox" id="rAll"> all scales</label></div>
+    <div id="rResult"></div>
+    <h2 style="margin:12px 0 0">High scores on this phone</h2>
+    <ul class="board" id="rBoard"></ul>
+  </div>
+
+  <div class="pane" id="p-player">
+    <h2>Who's playing?</h2>
+    <div class="plist" id="pList"></div>
+    <p style="margin-top:8px"><input type="text" id="pName" placeholder="Name (new player)" maxlength="14" autocomplete="off"></p>
+    <div class="avs" id="avs"></div>
+    <div class="bar"><button id="pSave">Play</button><span id="pInfo"></span></div>
+    <div class="badges" id="pBadges"></div>
+    <p class="foot">Scores and progress live on this phone only.</p>
+  </div>
+
+  <div class="pane search" id="p-lookup">
+    <input id="q" type="search" placeholder="Type a product, e.g. kielbasa" autocomplete="off">
+    <ul class="results" id="results"></ul>
+  </div>
+
+  <div class="machine">
+    <div class="scale">
+      <div class="fn">
+        <button data-k="DATE">DATE<br>TIME</button><button data-k="MODE">MODE</button><button data-k="SHIFT">SHIFT</button>
+        <button data-k="LEFT">&#9664;</button><button data-k="RIGHT">&#9654;</button><button data-k="UP">&#9650;<br>AUTO</button><button data-k="DOWN">&#9660;</button>
+        <button data-k="BLANK" class="dk"></button><button data-k="ZERO" class="dk">ZERO</button>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="numpad">
+      <div class="np">
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="TARE" class="b">TARE</button><button data-k="PLU" class="b">PLU</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="QTR" class="b"><span class="fr">1</span>4</button><button data-k="MUL" class="b" style="font-size:18px">&times;</button>
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="HALF" class="b"><span class="fr">1</span>2</button><button data-k="PRT" class="p">PRT/&#10033;</button>
+        <button data-k="0">0</button><button data-k="FOR" class="b">FOR</button><button data-k="C" class="y">C</button><button data-k="SAVE" class="b">SAVE</button><button data-k="FEED" class="b">FEED</button>
+      </div>
+      <div class="weights" id="weights">
+        <div class="cap">Put on the platter</div>
+        <button data-w="0.48">0.48 lb</button><button data-w="1.02">1.02 lb</button><button data-w="1.37">1.37 lb</button><button data-w="2.56">2.56 lb</button><button data-w="5.00">5.00 lb</button><button data-w="0" class="off">Take off</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ref">
+    <details><summary>Change a price (from the sheet)</summary><div class="body"><ol>
+      <li>Press 1</li><li>Press Mode (screen says PLU)</li><li>Press Print</li><li>Enter the PLU number</li><li>Press Print</li><li>Down arrow 3x (screen says PRICE)</li><li>Press Print</li><li>Enter the new price</li><li>Press Print</li><li>Down arrow 3x (screen says SAVE)</li><li>Press Print (a test sticker prints)</li><li>Press C</li></ol></div></details>
+    <details><summary>Label a product / clear the scale</summary><div class="body">
+      <p><b>Label:</b></p><ol><li>Press 1</li><li>Press Mode</li><li>Down arrow 3x (screen says NAME)</li><li>Press Print</li><li>Type the text on the product keys (corner letters; SHIFT for symbols; SPACE key for a space; left arrow to backspace in the sim)</li><li>Press Print</li><li>Press C</li></ol>
+      <p><b>Clear:</b></p><ol><li>Press 1</li><li>Press Mode</li><li>Down arrow 3x (NAME)</li><li>Press Print</li><li>Press C</li><li>Press Print</li><li>Press C</li></ol></div></details>
+    <details><summary>What the sim does and doesn't model</summary><div class="body">
+      <p>Modeled from the instruction sheet and the photos: sell by weight, sell by PLU number, manual unit price, TARE, ZERO, SAVE (hold the price for repeat labels), AUTO, quantity with the times key, the price-change and label procedures, and the test sticker.</p>
+      <p>Guesses: the menu words between PLU and NAME, and between the PLU record's NAME and PRICE and SAVE, show as dashes because the sheet doesn't say what they are. A name saved through the label procedure is used on labels printed without a PLU. FOR, 1/4, and 1/2 are not modeled; find out what they do at the shop and I'll add them.</p>
+      <p>Practice times each answer silently. A key you get right fast comes back in a while; slow or wrong keys come back within a few prompts. Progress, points, badges, and Rush high scores are saved on this phone (per player name). In Procedures, the finish line names your slowest step, and a clean run in Test mode earns the Procedure pro badge.</p>
+      <p>Prices come from the Notion catalogue and refresh every time the site rebuilds (this build: __BUILT__, __PRICED__ keys priced). This page is public, so they stay locked until you enter the shop code once on your phone. Keys with no catalogue price show 0.00. Prices marked unconfirmed came off the price boards and need a check at the scale; prices marked cave sheet are primal prices, not case prices. Changing a price with the procedure sticks for the session only; the catalogue is the source of truth.</p></div></details>
+    <details><summary>Per-unit produce (pink keys)</summary><div class="body"><p>Shallot, avocado, lemon, lime, garlic, onion, apple, lettuce, corn, russet potato, asparagus ring by the piece: type the count, press the times key, then the product key.</p></div></details>
+  </div>
+  <p class="foot">Key position is the PLU number: row 1 is 1 to 9, each row below adds 9.</p>
+</div>
+
+<script>
+const SCALES=/*LAYOUT*/[];
+const LEFT=[
+ ["1","2","3","4","5","6","7","8","9"],
+ ["0","-","=","[","]",",",".","/","¶"],
+ "QWERTYUIO".split(""),"ASDFGHJKL".split(""),
+ ["Z","X","C","V","B","N","M","P","SPC"],
+ ["À","È","Ì","Ñ","Ò","Ù","Ü","",""]
+];
+const SYM=["!","@","#","$","%","^","&","*","("];
+const MENU=["PLU","----","----","NAME"];
+const FIELDS=["NAME","----","----","PRICE","----","----","SAVE"];
+
+const $=id=>document.getElementById(id);
+const S={scale:0,mode:"sell",weight:0,tare:0,entry:"",unit:0,plu:null,qty:1,hold:false,auto:false,shift:false,prog:null,freeName:"",prices:{},names:{},labels:[],flash:null};
+
+/* Prices from the Notion catalogue, matched on Scale and PLU at build time. They ship encrypted
+   (AES-GCM, key from the shop code via PBKDF2) so the public page and repo never hold a readable
+   price list. Decrypted: {"scale:key(0-based)": [price, flag]}. flag: "" ok, "check" unconfirmed,
+   "cave" cave/primal sheet price, not case price. */
+const LOCKED=/*PRICES*/null;
+const PFLAG={};
+let PRICES_ON=false;
+const LSCODE="emerys.sim.code";
+const b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function openPrices(code){
+  const enc=new TextEncoder(),base=await crypto.subtle.importKey("raw",enc.encode(code.trim().toLowerCase()),"PBKDF2",false,["deriveKey"]);
+  const key=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(LOCKED.salt),iterations:LOCKED.iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["decrypt"]);
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(LOCKED.iv)},key,b64(LOCKED.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function unlock(code,quiet){
+  if(!LOCKED||!code)return false;
+  try{
+    const P=await openPrices(code);
+    Object.keys(P).forEach(k=>{if(!(k in S.prices))S.prices[k]=P[k][0];PFLAG[k]=P[k][1];});
+    PRICES_ON=true;$("lock").hidden=true;
+    try{localStorage.setItem(LSCODE,code);}catch(e){}
+    render();if(!quiet)note("Prices on. "+Object.keys(P).length+" keys have a catalogue price.");
+    return true;
+  }catch(e){
+    if(!quiet){$("lockMsg").textContent="That code didn't work.";$("lockMsg").className="msg bad";}
+    try{if(quiet)localStorage.removeItem(LSCODE);}catch(e2){}
+    return false;
+  }
+}
+function initLock(){
+  if(!LOCKED)return;
+  if(!(window.crypto&&crypto.subtle)){$("lock").hidden=false;$("lockMsg").textContent="This browser can't unlock prices. Open the page over https in Safari or Chrome.";return;}
+  $("lock").hidden=false;
+  $("lock").addEventListener("submit",e=>{e.preventDefault();$("lockMsg").textContent="";unlock($("code").value,false);});
+  let saved=null;try{saved=localStorage.getItem(LSCODE);}catch(e){}
+  if(saved)unlock(saved,true);
+}
+const money=n=>(Math.round(n*100)/100).toFixed(2);
+const keyName=(s,i)=>{const k=SCALES[s].keys[i];return k?k[0].replace("\n"," "):"";};
+const isUnit=(s,i)=>{const k=SCALES[s].keys[i];return !!(k&&k[2]);};
+function price(s,i){return S.prices[s+":"+i]||0;}
+function note(t){$("note").textContent=t;}
+
+/* ---------- rendering ---------- */
+function buildTabs(){
+  const t=$("tabs");t.innerHTML="";
+  SCALES.forEach((s,i)=>{const b=document.createElement("button");b.textContent=s.name;b.setAttribute("aria-pressed",i===S.scale);b.addEventListener("click",()=>setScale(i));t.appendChild(b);});
+}
+function setScale(i){S.scale=i;buildTabs();renderGrid();if(S.mode==="lookup")lookup($("q").value);if(S.mode==="proc")paintNext();render();}
+function renderGrid(){
+  const g=$("grid");g.innerHTML="";const s=SCALES[S.scale];
+  s.keys.forEach((k,i)=>{
+    const b=document.createElement("button");const row=Math.floor(i/9),col=i%9;
+    b.className="key";if(!k)b.classList.add("blank");if(k&&k[2])b.classList.add("unit");if(s.tint.includes(i))b.classList.add("tint");
+    b.innerHTML='<span class="l">'+LEFT[row][col]+'</span><span class="n">'+(i+1)+'</span>'+(k?k[0]:"");
+    b.dataset.k="K"+i;b.addEventListener("click",()=>press("K"+i));g.appendChild(b);
+  });
+  $("legend").textContent=S.scale===1?"Pink keys are per unit, not per pound.":"";
+}
+function clearMarks(){document.querySelectorAll(".ok,.bad,.hit").forEach(e=>e.classList.remove("ok","bad","hit"));}
+function mark(sel,cls){const el=document.querySelector('[data-k="'+sel+'"]');if(el)el.classList.add(cls);}
+function render(){
+  const p=S.prog,net=Math.max(0,S.weight-S.tare);
+  let w=money(net),u="",t="",utxt=false;
+  if(p){
+    w="";t="";utxt=true;
+    if(p.level==="menu")u=MENU[p.idx];
+    else if(p.level==="pluNo")u="PLU "+(S.entry||"_");
+    else if(p.level==="fields"){const f=FIELDS[p.fidx];u=f==="NAME"?"NAME "+keyName(S.scale,p.plu).toUpperCase():f==="PRICE"?"PRICE "+money(p.tempPrice):f;}
+    else if(p.level==="priceEntry")u="PRICE "+(S.entry?money(parseInt(S.entry)/100):money(p.tempPrice));
+    else if(p.level==="nameEntry")u="NAME "+(p.buf||"_");
+  }else{
+    const unit=S.entry?parseInt(S.entry)/100:S.unit;u=money(unit);
+    if(unit>0){const per=S.plu!==null&&isUnit(S.scale,S.plu);t=money(per?S.qty*unit:(S.qty>1?S.qty*unit:net*unit));}
+    if(S.qty>1&&!(S.plu!==null&&isUnit(S.scale,S.plu)))t=money(S.qty*unit);
+  }
+  $("dW").textContent=w;$("dU").textContent=u;$("dU").className="v"+(utxt?" txt":"");$("dT").textContent=t;
+  $("iZERO").className=S.weight===0?"on":"";$("iNET").className=S.tare>0?"on":"";$("iSAVE").className=S.hold?"on":"";$("iAUTO").className=S.auto?"on":"";$("iSHIFT").className=S.shift?"on":"";$("iPROG").className=p?"on":"";
+}
+function showLabel(l){
+  const per=l.per;
+  $("lastLabel").innerHTML=l.blank?'<div class="label"><div class="sn">Emery\'s Meats</div><div class="pn">(blank label fed)</div></div>':
+   '<div class="label"><div class="sn">Emery\'s Meats</div><div class="pn">'+(l.name||"&nbsp;")+'</div>'
+   +'<div class="r"><span>'+(per?"QTY":"NET WT")+'</span><span>'+(per?l.qty:l.w+" lb")+'</span></div>'
+   +'<div class="r"><span>'+(per?"EACH":"$/lb")+'</span><span>'+money(l.u)+'</span></div>'
+   +'<div class="r tot"><span>TOTAL</span><span>$'+money(l.t)+'</span></div>'
+   +'<div class="r"><span>'+l.date+'</span><span>'+(l.plu!==null&&l.plu!==undefined?"PLU "+(l.plu+1):"")+'</span></div></div>';
+}
+
+/* ---------- the machine ---------- */
+function apply(id){
+  if(id.startsWith("W:")){S.weight=parseFloat(id.slice(2));if(S.weight===0)S.tare=0;note(S.weight?"Weight on the platter: "+money(S.weight)+" lb.":"Platter empty.");
+    if(S.auto&&S.prog===null&&S.weight>0&&(S.unit>0||S.entry))printLabel(); return;}
+  if(id==="DATE"){const d=new Date();note("Date/time: "+d.toLocaleDateString()+" "+d.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));return;}
+  if(id==="SHIFT"){S.shift=!S.shift;note(S.shift?"Shift on: product keys type their symbols.":"Shift off.");return;}
+  if(S.prog){progKey(id);return;}
+  if(/^\d$/.test(id)){S.entry=(S.entry+id).slice(-6);note("Entering "+money(parseInt(S.entry)/100)+" (unit price, a PLU number for the PLU key, or a count for the times key).");return;}
+  if(id==="MODE"){if(S.entry==="1"){S.entry="";S.prog={level:"menu",idx:0};note("Programming. Screen says PLU. Down arrow moves through the menu; PRT selects; C backs out.");}else note("Press 1 first, then MODE, to get into programming.");return;}
+  if(id==="PLU"){const n=parseInt(S.entry);if(n>=1&&n<=54&&SCALES[S.scale].keys[n-1]){S.entry="";select(n-1);}else{note("No PLU "+(S.entry||"entered")+" on this scale. Type the number, then PLU.");S.entry="";}return;}
+  if(id.startsWith("K")){select(parseInt(id.slice(1)));return;}
+  if(id==="C"){S.entry="";S.unit=0;S.plu=null;S.qty=1;note("Cleared.");return;}
+  if(id==="MUL"){const n=parseInt(S.entry);if(n>=1){S.qty=n;S.entry="";note("Quantity "+n+". Now hit the product key.");}else note("Type a count first, then the times key.");return;}
+  if(id==="PRT"){printLabel();return;}
+  if(id==="TARE"){if(S.tare>0&&S.weight-S.tare<=0.001){S.tare=0;note("Tare cleared.");}else if(S.weight>0){S.tare=S.weight;note("Tared "+money(S.weight)+" lb. NET shows zero; add the product.");}else note("Put the container on first, then TARE.");return;}
+  if(id==="ZERO"){S.weight=0;S.tare=0;note("Zeroed.");return;}
+  if(id==="SAVE"){S.hold=!S.hold;note(S.hold?"SAVE on: the price stays after printing, for a run of the same item.":"SAVE off.");return;}
+  if(id==="UP"){S.auto=!S.auto;note(S.auto?"AUTO on: prints by itself when weight lands on the platter.":"AUTO off.");return;}
+  if(id==="FEED"){S.labels.push({blank:true});showLabel({blank:true});note("Fed one blank label.");return;}
+  if(id==="FOR"||id==="QTR"||id==="HALF"){note("Not modeled yet. Find out what "+(id==="FOR"?"FOR":id==="QTR"?"the 1/4 key":"the 1/2 key")+" does at the shop.");return;}
+  if(id==="DOWN"||id==="LEFT"||id==="RIGHT"||id==="BLANK"){note("Nothing happens in sell mode.");return;}
+}
+function select(i){
+  const k=SCALES[S.scale].keys[i];if(!k){note("Blank key.");return;}
+  S.plu=i;S.unit=price(S.scale,i);S.entry="";
+  const per=isUnit(S.scale,i);
+  const fl=PFLAG[S.scale+":"+i]||"";
+  note((S.names[S.scale+":"+i]||k[1])+(S.unit?" $"+money(S.unit)+(per?" each":"/lb")+(fl==="check"?" (unconfirmed, check at the scale)":fl==="cave"?" (cave sheet price, case price not recorded)":""):(PRICES_ON||!LOCKED?" (no price in the catalogue yet; type one or use the price procedure)":" (prices are locked; enter the shop code at the top)"))+(per?". Per unit: count times price.":""));
+  if(S.auto&&S.weight>0&&S.unit>0)printLabel();
+}
+function printLabel(){
+  const unit=S.entry?parseInt(S.entry)/100:S.unit,net=Math.max(0,S.weight-S.tare);
+  const per=S.plu!==null&&isUnit(S.scale,S.plu);
+  if(unit<=0){note("No price. Hit a product key or type a price first.");return;}
+  if(!per&&net<=0&&S.qty<=1){note("Nothing on the platter.");return;}
+  const l={name:S.plu!==null?(S.names[S.scale+":"+S.plu]||keyName(S.scale,S.plu)):S.freeName,w:money(net),u:unit,qty:S.qty,per:per||S.qty>1,t:(per||S.qty>1)?S.qty*unit:net*unit,date:new Date().toLocaleDateString(),plu:S.plu};
+  S.labels.push(l);showLabel(l);
+  note("Printed: "+(l.name||"(no name)")+" $"+money(l.t)+(S.hold?" . Price held for the next one.":""));
+  if(!S.hold){S.unit=0;S.plu=null;S.entry="";S.qty=1;}
+}
+function progKey(id){
+  const p=S.prog;
+  if(p.level==="menu"){
+    if(id==="DOWN"){p.idx=Math.min(MENU.length-1,p.idx+1);note("Menu: "+MENU[p.idx]);}
+    else if(id==="UP"){p.idx=Math.max(0,p.idx-1);note("Menu: "+MENU[p.idx]);}
+    else if(id==="PRT"){if(MENU[p.idx]==="PLU"){p.level="pluNo";S.entry="";note("Enter the PLU number, then PRT.");}else if(MENU[p.idx]==="NAME"){p.level="nameEntry";p.buf=S.freeName;note("Type the name on the product keys (corner letters). PRT saves. C clears the text. Left arrow backspaces.");}else note("Nothing modeled at this menu item.");}
+    else if(id==="C"){S.prog=null;note("Back to selling.");}
+    else note("In the menu: down arrow, PRT, or C.");
+    return;
+  }
+  if(p.level==="pluNo"){
+    if(/^\d$/.test(id)){S.entry=(S.entry+id).slice(-2);}
+    else if(id==="PRT"){const n=parseInt(S.entry);if(n>=1&&n<=54&&SCALES[S.scale].keys[n-1]){p.plu=n-1;p.fidx=0;p.tempPrice=price(S.scale,p.plu);p.level="fields";S.entry="";note("PLU "+n+" ("+keyName(S.scale,p.plu)+"). Down arrow 3 times to PRICE.");}else{note("No PLU "+(S.entry||"")+" on this scale.");S.entry="";}}
+    else if(id==="C"){S.prog=null;S.entry="";note("Back to selling.");}
+    return;
+  }
+  if(p.level==="fields"){
+    if(id==="DOWN"){p.fidx=Math.min(FIELDS.length-1,p.fidx+1);note("Field: "+FIELDS[p.fidx]);}
+    else if(id==="UP"){p.fidx=Math.max(0,p.fidx-1);note("Field: "+FIELDS[p.fidx]);}
+    else if(id==="PRT"){const f=FIELDS[p.fidx];
+      if(f==="PRICE"){p.level="priceEntry";S.entry="";note("Type the new price (649 for $6.49), then PRT.");}
+      else if(f==="SAVE"){S.prices[S.scale+":"+p.plu]=p.tempPrice;const l={name:keyName(S.scale,p.plu),w:"0.00",u:p.tempPrice,qty:1,per:false,t:0,date:new Date().toLocaleDateString(),plu:p.plu};S.labels.push(l);showLabel(l);note("Saved. Test sticker printed with $"+money(p.tempPrice)+"/lb. Press C to leave programming.");}
+      else if(f==="NAME"){note("PLU names aren't edited in this sim; the label procedure is the one on the sheet.");}
+      else note("Nothing modeled at this field.");}
+    else if(id==="C"){S.prog=null;note("Back to selling."+(price(S.scale,p.plu)===p.tempPrice?"":" (Price not saved; you skipped SAVE.)"));}
+    else note("Down arrow, PRT, or C here.");
+    return;
+  }
+  if(p.level==="priceEntry"){
+    if(/^\d$/.test(id)){S.entry=(S.entry+id).slice(-6);}
+    else if(id==="C"){S.entry="";note("Price entry cleared.");}
+    else if(id==="PRT"){if(S.entry)p.tempPrice=parseInt(S.entry)/100;S.entry="";p.level="fields";note("Price set to $"+money(p.tempPrice)+". Down arrow 3 times to SAVE, then PRT.");}
+    else note("Digits, PRT, or C.");
+    return;
+  }
+  if(p.level==="nameEntry"){
+    if(id.startsWith("K")){const i=parseInt(id.slice(1)),row=Math.floor(i/9),col=i%9;let ch=LEFT[row][col];if(ch==="SPC")ch=" ";if(S.shift&&row===0)ch=SYM[col];if(ch&&ch.length===1)p.buf=(p.buf+ch).slice(0,16);}
+    else if(id==="LEFT"){p.buf=p.buf.slice(0,-1);}
+    else if(id==="C"){p.buf="";note("Name cleared.");}
+    else if(id==="PRT"){S.freeName=p.buf;p.level="menu";p.idx=3;note(p.buf?"Name saved: "+p.buf+". Press C to leave programming.":"Name cleared and saved. Press C to leave programming.");}
+    else if(/^\d$/.test(id)){p.buf=(p.buf+id).slice(0,16);}
+    else note("Type on the product keys. PRT saves, C clears, left arrow backspaces.");
+    return;
+  }
+}
+
+/* ---------- press router ---------- */
+function press(id){
+  clearMarks();
+  if(S.mode==="keys"){quizKey(id);return;}
+  if(S.mode==="rush"){rushKey(id);return;}
+  if(S.mode==="player")return;
+  if(S.mode==="lookup"){if(id.startsWith("K")){mark(id,"hit");const k=SCALES[S.scale].keys[parseInt(id.slice(1))];$("q").value=k?k[1]:"";lookup($("q").value);}return;}
+  if(S.mode==="proc"&&T.active){if(!trainerCheck(id))return;}
+  apply(id);render();
+  if(S.mode==="proc"&&T.active)trainerAdvance();
+}
+document.querySelectorAll("[data-k]").forEach(b=>b.addEventListener("click",()=>press(b.dataset.k)));
+document.querySelectorAll("#weights [data-w]").forEach(b=>b.addEventListener("click",()=>press("W:"+b.dataset.w)));
+
+/* ---------- procedure trainer ---------- */
+const T={active:false,proc:null,steps:[],i:0,mistakes:0,wrongs:0,guided:true,start:0,stepStart:0,times:[]};
+const digits=n=>String(n).split("").map(d=>({k:d,hint:"Press "+d}));
+const KEYLABEL={DATE:"DATE/TIME",MODE:"MODE",SHIFT:"SHIFT",LEFT:"left arrow",RIGHT:"right arrow",UP:"up arrow (AUTO)",DOWN:"down arrow",ZERO:"ZERO",TARE:"TARE",PLU:"PLU",QTR:"1/4",MUL:"times",HALF:"1/2",PRT:"PRT/*",FOR:"FOR",C:"C",SAVE:"SAVE",FEED:"FEED"};
+function randKey(filter){const ks=SCALES[S.scale].keys.map((k,i)=>k&&(!filter||filter(k,i))?i:-1).filter(i=>i>=0);return ks[Math.floor(Math.random()*ks.length)];}
+const PROCS=[
+ {id:"sell",title:"Sell by weight",make(){const i=randKey((k)=>!k[2]);const n=keyName(S.scale,i);return{goal:"Ring up "+SCALES[S.scale].keys[i][1]+" by weight and print the label.",steps:[{k:"W",hint:"Put it on the platter: tap any weight."},{k:"K"+i,hint:"Hit the "+n+" key (number "+(i+1)+")."},{k:"PRT",hint:"Press PRT/* to print."}]};}},
+ {id:"sellnum",title:"Sell by PLU number",make(){const i=randKey((k)=>!k[2]);const n=keyName(S.scale,i);return{goal:"Ring up "+SCALES[S.scale].keys[i][1]+" by typing its PLU number.",steps:[{k:"W",hint:"Tap a weight."},...digits(i+1).map(s=>({k:s.k,hint:"Type the PLU number for "+n+" (it's the key's position): "+s.k})),{k:"PLU",hint:"Press the blue PLU key."},{k:"PRT",hint:"Press PRT/* to print."}]};}},
+ {id:"unit",title:"Sell per-unit produce",make(){if(S.scale!==1)return{goal:"Switch to the Produce scale tab for this one, then hit New task.",steps:[]};const i=randKey((k)=>!!k[2]);const q=2+Math.floor(Math.random()*4);return{goal:"Ring up "+q+" "+SCALES[S.scale].keys[i][1].replace(" (per unit)","")+"s.",steps:[{k:String(q),hint:"Type the count: "+q},{k:"MUL",hint:"Press the times key."},{k:"K"+i,hint:"Hit the "+keyName(S.scale,i)+" key."},{k:"PRT",hint:"Press PRT/* to print."}]};}},
+ {id:"tare",title:"Tare a container",make(){const i=randKey((k)=>!k[2]);return{goal:"Weigh "+SCALES[S.scale].keys[i][1]+" in a container without charging for the container.",steps:[{k:"W",hint:"Put the empty container on: tap a weight."},{k:"TARE",hint:"Press TARE. NET lights and the weight reads zero."},{k:"W",hint:"Add the product: tap a bigger weight."},{k:"K"+i,hint:"Hit the "+keyName(S.scale,i)+" key."},{k:"PRT",hint:"Press PRT/* to print."}]};}},
+ {id:"price",title:"Change a price",make(){const i=randKey();const pr=[3.99,4.49,5.99,6.49,7.99,8.99,9.99,10.99,12.99][Math.floor(Math.random()*9)];const n=keyName(S.scale,i);const pd=String(Math.round(pr*100));
+   return{goal:"Change the price of "+SCALES[S.scale].keys[i][1]+" to $"+money(pr)+"/lb.",steps:[{k:"1",hint:"Press 1."},{k:"MODE",hint:"Press MODE. Screen says PLU."},{k:"PRT",hint:"Press PRT/* to open the PLU."},...digits(i+1).map(s=>({k:s.k,hint:"Enter the PLU number for "+n+": "+s.k})),{k:"PRT",hint:"Press PRT/*. The PLU name shows."},{k:"DOWN",hint:"Down arrow (1 of 3)."},{k:"DOWN",hint:"Down arrow (2 of 3)."},{k:"DOWN",hint:"Down arrow (3 of 3). Screen says PRICE."},{k:"PRT",hint:"Press PRT/* to edit the price."},...pd.split("").map(d=>({k:d,hint:"Type the price with no decimal: "+d})),{k:"PRT",hint:"Press PRT/* to accept the price."},{k:"DOWN",hint:"Down arrow (1 of 3)."},{k:"DOWN",hint:"Down arrow (2 of 3)."},{k:"DOWN",hint:"Down arrow (3 of 3). Screen says SAVE."},{k:"PRT",hint:"Press PRT/*. The test sticker prints."},{k:"C",hint:"Press C to leave programming."}]};}},
+ {id:"label",title:"Label a product (free text)",make(){const words=["SALE","ROAST","STEW","HAM","TIPS","PORK"];const w=words[Math.floor(Math.random()*words.length)];const letters=w.split("").map(ch=>{let idx=-1;LEFT.forEach((r,ri)=>r.forEach((c,ci)=>{if(c===ch&&idx<0)idx=ri*9+ci;}));return{k:"K"+idx,hint:"Type "+ch+" (corner letter on key "+(idx+1)+")."};});
+   return{goal:"Put the name "+w+" on the scale so it prints on the next hand-priced label.",steps:[{k:"1",hint:"Press 1."},{k:"MODE",hint:"Press MODE."},{k:"DOWN",hint:"Down arrow (1 of 3)."},{k:"DOWN",hint:"Down arrow (2 of 3)."},{k:"DOWN",hint:"Down arrow (3 of 3). Screen says NAME."},{k:"PRT",hint:"Press PRT/* to edit the name."},...letters,{k:"PRT",hint:"Press PRT/* to save."},{k:"C",hint:"Press C to leave programming."}]};}},
+ {id:"clear",title:"Clear the label name",make(){return{goal:"Clear the free-text name off the scale.",steps:[{k:"1",hint:"Press 1."},{k:"MODE",hint:"Press MODE."},{k:"DOWN",hint:"Down arrow (1 of 3)."},{k:"DOWN",hint:"Down arrow (2 of 3)."},{k:"DOWN",hint:"Down arrow (3 of 3). Screen says NAME."},{k:"PRT",hint:"Press PRT/*."},{k:"C",hint:"Press C to wipe the text."},{k:"PRT",hint:"Press PRT/* to save the empty name."},{k:"C",hint:"Press C to leave programming."}]};}}
+];
+PROCS.forEach(p=>{const o=document.createElement("option");o.value=p.id;o.textContent=p.title;$("procSel").appendChild(o);});
+function newTask(){
+  clearMarks();S.prog=null;S.entry="";S.unit=0;S.plu=null;S.qty=1;S.weight=0;S.tare=0;render();
+  const p=PROCS.find(x=>x.id===$("procSel").value);const t=p.make();
+  T.active=t.steps.length>0;T.proc=p;T.steps=t.steps;T.i=0;T.mistakes=0;T.wrongs=0;T.start=Date.now();T.stepStart=Date.now();T.times=[];
+  $("goal").textContent=t.goal;$("pstat").textContent="";renderSteps();paintNext();
+}
+function renderSteps(){
+  const u=$("steps");u.innerHTML="";
+  T.steps.forEach((s,i)=>{const li=document.createElement("li");li.textContent=s.hint;li.className=i<T.i?"done":i===T.i?"cur":"";if(!T.guided&&i>T.i)li.textContent="Step "+(i+1);u.appendChild(li);});
+}
+function paintNext(){
+  document.querySelectorAll(".next").forEach(e=>e.classList.remove("next"));
+  const h=$("hint");
+  if(!T.active){h.className="hint good";
+    if(!T.steps.length){h.textContent="";return;}
+    let slow="";if(T.times.length){let mi=0;T.times.forEach((t,i)=>{if(t>T.times[mi])mi=i;});if(T.times[mi]>=4)slow=" Slowest step: "+T.steps[mi].hint.replace(/\.$/,"")+" ("+T.times[mi].toFixed(0)+" s).";}
+    h.textContent="Done in "+Math.round((Date.now()-T.start)/1000)+" s with "+T.mistakes+" wrong press"+(T.mistakes===1?"":"es")+"."+slow+" Hit New task.";return;}
+  const s=T.steps[T.i];
+  if(T.guided||T.wrongs>=2){h.className="hint";h.textContent=s.hint;
+    if(s.k==="W")document.querySelectorAll("#weights [data-w]").forEach(b=>{if(parseFloat(b.dataset.w)>0)b.classList.add("next");});
+    else mark(s.k,"next");}
+  else{h.className="hint";h.textContent="Step "+(T.i+1)+" of "+T.steps.length+". No hints in test mode until you miss twice.";}
+}
+function trainerCheck(id){
+  const s=T.steps[T.i];const want=s.k;
+  const okW=want==="W"&&id.startsWith("W:")&&parseFloat(id.slice(2))>0;
+  const okTare=want==="W"&&T.proc.id==="tare"&&T.i===2&&id.startsWith("W:")&&parseFloat(id.slice(2))>S.weight;
+  const ok=okW&&(T.proc.id!=="tare"||T.i!==2||okTare)||id===want;
+  if(ok){T.wrongs=0;return true;}
+  T.mistakes++;T.wrongs++;
+  if(!id.startsWith("W:"))mark(id,"bad");
+  const h=$("hint");h.className="hint err";h.textContent=(T.proc.id==="tare"&&want==="W"&&T.i===2&&id.startsWith("W:"))?"Add more weight than the container, not less.":"Not that one."+(T.guided||T.wrongs>=2?" It's "+(want==="W"?"a weight button.":want.startsWith("K")?"the "+keyName(S.scale,parseInt(want.slice(1)))+" key (number "+(parseInt(want.slice(1))+1)+").":KEYLABEL[want]||want+"."):"");
+  if(T.wrongs>=2)paintNext();
+  $("pstat").textContent=T.mistakes+" wrong";
+  return false;
+}
+function trainerAdvance(){
+  T.times.push((Date.now()-T.stepStart)/1000);T.stepStart=Date.now();
+  T.i++;
+  if(T.i>=T.steps.length){T.active=false;renderSteps();paintNext();if(T.guided)addPts(15);else{addPts(T.mistakes===0?75:30);if(T.mistakes===0)award("pro");}return;}
+  renderSteps();paintNext();
+}
+$("procSel").addEventListener("change",newTask);
+$("restart").addEventListener("click",newTask);
+$("guided").addEventListener("click",()=>{T.guided=true;$("guided").setAttribute("aria-pressed",true);$("test").setAttribute("aria-pressed",false);renderSteps();paintNext();});
+$("test").addEventListener("click",()=>{T.guided=false;$("guided").setAttribute("aria-pressed",false);$("test").setAttribute("aria-pressed",true);renderSteps();paintNext();});
+
+/* ---------- keys quiz: timed, adaptive ---------- */
+/* Each key gets a strength. Right and fast raises it, slow keeps it, wrong resets it.
+   Interval before it comes back = 2^strength prompts. Timing runs silently. */
+const Q={target:null,last:null,answered:false,ok:0,tries:0,streak:0,n:0,t0:0,rts:[],mem:{}};
+function memOf(k){return Q.mem[k]||(Q.mem[k]={str:-1,due:0,rt:null});}
+function persistMem(){const p=player();if(!p)return;p.mem=Q.mem;p.qn=Q.n;save();}
+function pool(){const all=[];SCALES.forEach((s,si)=>s.keys.forEach((k,i)=>{if(k)all.push({s:si,i});}));return $("allScales").checked?all:all.filter(x=>x.s===S.scale);}
+function pickNext(){
+  const p=pool().filter(x=>!(Q.last&&x.s===Q.last.s&&x.i===Q.last.i));if(!p.length)return null;
+  const due=[],fresh=[],later=[];
+  p.forEach(x=>{const m=memOf(x.s+":"+x.i);if(m.str<0)fresh.push(x);else if(m.due<=Q.n)due.push({x,over:Q.n-m.due,str:m.str});else later.push({x,d:m.due-Q.n});});
+  // most overdue and weakest first, fresh keys mixed in about a third of the time
+  if(due.length&&(!fresh.length||Math.random()<0.7)){due.sort((a,b)=>(b.over-a.over)||(a.str-b.str));const top=due.slice(0,3);return top[Math.floor(Math.random()*top.length)].x;}
+  if(fresh.length)return fresh[Math.floor(Math.random()*fresh.length)];
+  later.sort((a,b)=>a.d-b.d);const top=later.slice(0,3);return top[Math.floor(Math.random()*top.length)].x;
+}
+function nextPrompt(){clearMarks();Q.answered=false;$("dU").textContent="0.00";$("dU").className="v";$("dT").textContent="";$("dW").textContent="0.00";const pick=pickNext();if(!pick)return;Q.target=pick;Q.last=pick;$("ask").textContent=$("allScales").checked?"Ring up (find the right scale too)":"Ring up on this scale";$("item").textContent=SCALES[pick.s].keys[pick.i][1];$("fb").textContent="";$("fb").className="fb";Q.t0=Date.now();}
+function qScore(){
+  const solid=Object.values(Q.mem).filter(m=>m.str>=3).length,learning=Object.values(Q.mem).filter(m=>m.str>=0&&m.str<3).length;
+  const avg=Q.rts.length?(Q.rts.slice(-10).reduce((a,b)=>a+b,0)/Math.min(10,Q.rts.length)).toFixed(1):"";
+  $("score").textContent=Q.ok+" of "+Q.tries+(avg?", "+avg+" s avg":"")+", "+solid+" solid, "+learning+" learning";
+}
+function quizKey(id){
+  if(!id.startsWith("K")||Q.answered||!Q.target)return;
+  const rt=(Date.now()-Q.t0)/1000;Q.rts.push(rt);Q.n++;
+  const i=parseInt(id.slice(1)),k=SCALES[S.scale].keys[i],t=SCALES[Q.target.s].keys[Q.target.i];
+  const real=price(Q.target.s,Q.target.i),per=isUnit(Q.target.s,Q.target.i);
+  const ptxt=real>0||(LOCKED&&!PRICES_ON)?"":" No price on file.";
+  const right=S.scale===Q.target.s&&k&&k[1]===t[1];Q.answered=true;Q.tries++;const key=Q.target.s+":"+Q.target.i,m=memOf(key);m.rt=rt;
+  $("dU").textContent=money(real);$("dU").className="v";$("dT").textContent="";$("dW").textContent=per?"":"0.00";
+  if(right){
+    Q.ok++;Q.streak++;mark(id,"ok");
+    const gain=rt<2.5?2:rt<5?1:0;m.str=Math.min(6,Math.max(0,m.str)+gain);if(gain===0&&m.str===0)m.str=0;
+    m.due=Q.n+Math.round(Math.pow(2,m.str));
+    $("fb").textContent="Right. Key "+(i+1)+"."+(gain===0?" Slow, so it'll be back soon.":"")+ptxt;$("fb").className="fb ok";setTimeout(nextPrompt,gain===0?1600:1100);
+    addPts(10+gain*5);if(rt<1)award("fast");
+  }else{
+    Q.streak=0;mark(id,"bad");m.str=0;m.due=Q.n+1;
+    if(S.scale===Q.target.s){mark("K"+Q.target.i,"ok");$("fb").textContent="No. It's key "+(Q.target.i+1)+" ("+keyName(Q.target.s,Q.target.i)+")."+ptxt;}
+    else{$("fb").textContent="Wrong scale. That's on "+SCALES[Q.target.s].name+", key "+(Q.target.i+1)+"."+ptxt;setTimeout(()=>{setScale(Q.target.s);mark("K"+Q.target.i,"ok");},900);}
+    $("fb").className="fb bad";
+  }
+  qScore();persistMem();
+}
+$("next").addEventListener("click",nextPrompt);$("allScales").addEventListener("change",nextPrompt);
+
+/* ---------- lookup ---------- */
+function lookup(q){
+  const r=$("results");r.innerHTML="";q=(q||"").trim().toLowerCase();if(!q){clearMarks();return;}
+  const hits=[];SCALES.forEach((s,si)=>s.keys.forEach((k,i)=>{if(!k)return;if((k[0]+" "+k[1]).toLowerCase().replace(/\n/g," ").includes(q))hits.push({s:si,i,k});}));
+  if(!hits.length){const li=document.createElement("li");li.textContent="No key matches that.";r.appendChild(li);return;}
+  clearMarks();
+  hits.forEach(h=>{if(h.s===S.scale)mark("K"+h.i,"hit");const li=document.createElement("li");li.innerHTML='<b>'+(h.i+1)+'</b> '+h.k[1]+'<small>'+SCALES[h.s].name+(h.k[2]?", per unit":"")+'</small>';li.addEventListener("click",()=>{if(h.s!==S.scale)setScale(h.s);clearMarks();mark("K"+h.i,"hit");});r.appendChild(li);});
+}
+$("q").addEventListener("input",e=>lookup(e.target.value));
+
+/* ---------- modes ---------- */
+function setMode(m){
+  S.mode=m;clearMarks();document.querySelectorAll(".next").forEach(e=>e.classList.remove("next"));
+  document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
+  document.querySelectorAll(".pane").forEach(p=>p.classList.toggle("on",p.id==="p-"+m));
+  if(m==="keys")nextPrompt();else render();
+  if(m==="proc")newTask();
+  if(m==="rush"){if(R.on)rushEnd(true);renderBoard();$("rResult").innerHTML="";}
+  if(m==="player")renderPlayerPane();
+  document.getElementById("chip").style.display="";
+  if(m==="lookup"){$("q").focus();lookup($("q").value);}
+  if(m==="sell")note("Sell mode. Tap a weight, hit a product key, press PRT.");
+}
+document.querySelectorAll("#modes button").forEach(b=>b.addEventListener("click",()=>setMode(b.dataset.m)));
+
+/* ---------- players, points, badges (this phone only) ---------- */
+const LS="emerys.sim.v1";
+let DB={players:{},current:null,board:[]};
+function load(){try{const r=localStorage.getItem(LS);if(r)DB=Object.assign(DB,JSON.parse(r));}catch(e){}}
+function save(){try{localStorage.setItem(LS,JSON.stringify(DB));}catch(e){}}
+const AVS=["🐮","🐷","🐔","🐑","🐐","🐇","🦃","🐟","🥩","🥓","🌭","🔪","🧑‍🍳","🧤"];
+const RANKS=[[0,"Apprentice"],[1500,"Counter hand"],[6000,"Butcher"],[15000,"Master butcher"],[40000,"Legend of Brewer"]];
+const BADGES={first:"First key",streak10:"Ten in a row",fast:"Under a second",clean:"Clean round",allfour:"All four scales",pro:"Procedure pro",pb:"Personal best",thousand:"1,000 in a round"};
+function player(){return DB.current&&DB.players[DB.current]||null;}
+function rank(pts){let r=RANKS[0][1];RANKS.forEach(x=>{if(pts>=x[0])r=x[1];});return r;}
+function nextRank(pts){return RANKS.find(x=>x[0]>pts)||null;}
+function addPts(n){const p=player();if(!p||!n)return;const before=rank(p.pts);p.pts+=n;save();renderChip();if(rank(p.pts)!==before){toast("Promoted: "+rank(p.pts)+"!","ok");confetti();}}
+function award(b){const p=player();if(!p||p.badges[b])return;p.badges[b]=Date.now();save();toast("Badge: "+BADGES[b],"ok");}
+function toast(t,cls){const d=document.createElement("div");d.className="pop"+(cls==="bad"?" bad":"");d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),950);}
+function confetti(){const cols=["#e6b800","#8d1f2c","#2c8a4c","#3b7bd4","#fff"];for(let i=0;i<48;i++){const c=document.createElement("i");c.className="conf";c.style.left=Math.random()*100+"vw";c.style.background=cols[i%cols.length];c.style.animationDelay=(Math.random()*.6)+"s";c.style.transform="rotate("+Math.random()*360+"deg)";document.body.appendChild(c);setTimeout(()=>c.remove(),2600);}}
+function renderChip(){const p=player();const n=p?nextRank(p.pts):null;
+  $("chip").innerHTML=p?'<span class="av">'+p.av+'</span><b>'+p.name+'</b><span>'+p.pts.toLocaleString()+' pts</span><span class="rk">'+rank(p.pts)+(n?" · "+(n[0]-p.pts).toLocaleString()+" to "+n[1]:"")+'</span>'
+   :'<span class="av">👤</span><b>Tap to sign in</b><span class="rk">scores need a name</span>';}
+let pickAv=AVS[0];
+function renderPlayerPane(){
+  const L=$("pList");L.innerHTML="";
+  Object.keys(DB.players).forEach(n=>{const b=document.createElement("button");const p=DB.players[n];b.textContent=p.av+" "+n;b.setAttribute("aria-pressed",DB.current===n);b.addEventListener("click",()=>{setPlayer(n);renderPlayerPane();});L.appendChild(b);});
+  const A=$("avs");A.innerHTML="";AVS.forEach(a=>{const b=document.createElement("button");b.textContent=a;b.setAttribute("aria-pressed",a===pickAv);b.addEventListener("click",()=>{pickAv=a;renderPlayerPane();});A.appendChild(b);});
+  const p=player();$("pInfo").textContent=p?p.name+": "+p.pts.toLocaleString()+" pts, "+rank(p.pts)+", "+(p.rounds||0)+" rush rounds":"";
+  const B=$("pBadges");B.innerHTML="";Object.keys(BADGES).forEach(k=>{const sp=document.createElement("span");sp.textContent=BADGES[k];if(p&&p.badges[k])sp.classList.add("got");B.appendChild(sp);});
+}
+function setPlayer(n){DB.current=n;const p=player();Q.mem=p.mem||{};Q.n=p.qn||0;Q.ok=0;Q.tries=0;Q.rts=[];save();renderChip();}
+$("pSave").addEventListener("click",()=>{const n=$("pName").value.trim().replace(/[<>]/g,"");if(n){if(!DB.players[n])DB.players[n]={name:n,av:pickAv,pts:0,badges:{},best:{},rounds:0,fastest:null,mem:{},qn:0};else DB.players[n].av=pickAv;setPlayer(n);$("pName").value="";}
+  if(player()){setMode("rush");}else $("pInfo").textContent="Type a name first.";});
+$("chip").addEventListener("click",()=>setMode(S.mode==="player"?"rush":"player"));
+$("chip").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("chip").click();}});
+
+/* ---------- rush: 60 second round ---------- */
+const R={on:false,left:60,score:0,streak:0,bestStreak:0,n:0,ok:0,fast:null,target:null,last:null,t0:0,timer:null,scales:{},wrongs:0};
+function rushPool(){const all=[];SCALES.forEach((s,si)=>s.keys.forEach((k,i)=>{if(k)all.push({s:si,i});}));return $("rAll").checked?all:all.filter(x=>x.s===S.scale);}
+function rushScaleName(){return $("rAll").checked?"All scales":SCALES[S.scale].name;}
+function rushStart(){
+  if(!player()){setMode("player");$("pInfo").textContent="Pick a name so the score has somewhere to go.";return;}
+  if(R.on)return;
+  Object.assign(R,{on:true,left:60,score:0,streak:0,bestStreak:0,n:0,ok:0,fast:null,target:null,last:null,wrongs:0,scales:{}});
+  $("rResult").innerHTML="";$("rStart").disabled=true;$("rScore").textContent="0";$("rStreak").textContent="0";$("rBar").className="";$("rBar").style.width="100%";
+  let c=3;$("rItem").textContent="Ready";$("rFb").textContent="";
+  const cd=setInterval(()=>{if(c>0){$("rItem").textContent=String(c);c--;}else{clearInterval(cd);$("rFb").textContent="";rushNext();const start=Date.now();R.timer=setInterval(()=>{R.left=Math.max(0,60-(Date.now()-start)/1000);$("rTime").textContent=Math.ceil(R.left);$("rBar").style.width=(R.left/60*100)+"%";$("rBar").className=R.left<10?"low":"";if(R.left<=0)rushEnd(false);},100);}},600);
+}
+function rushNext(){clearMarks();const p=rushPool();let pick;do{pick=p[Math.floor(Math.random()*p.length)];}while(p.length>1&&R.last&&pick.s===R.last.s&&pick.i===R.last.i);R.target=pick;R.last=pick;R.wrongs=0;$("rItem").textContent=SCALES[pick.s].keys[pick.i][1];$("rItem").classList.remove("shake");R.t0=Date.now();}
+function rushKey(id){
+  if(!R.on){if(!id.startsWith("K"))return;$("rFb").textContent="Press Start first.";return;}
+  if(!id.startsWith("K")||!R.target)return;
+  const rt=(Date.now()-R.t0)/1000,i=parseInt(id.slice(1)),k=SCALES[S.scale].keys[i],t=SCALES[R.target.s].keys[R.target.i];
+  const right=S.scale===R.target.s&&k&&k[1]===t[1];R.n++;
+  if(right){
+    R.ok++;R.streak++;R.bestStreak=Math.max(R.bestStreak,R.streak);R.scales[R.target.s]=1;
+    if(R.fast===null||rt<R.fast)R.fast=rt;
+    const mult=R.streak>=10?3:R.streak>=5?2:1,speed=Math.max(0,Math.round((3-rt)/3*100)),pts=(100+speed)*mult;
+    R.score+=pts;$("rScore").textContent=R.score.toLocaleString();$("rStreak").textContent=R.streak;
+    mark(id,"ok");toast("+"+pts+(mult>1?"  x"+mult:""),"ok");
+    $("rFb").textContent=rt<1?"Lightning.":rt<2?"Quick.":"";
+    if(R.streak===10)award("streak10");
+    rushNext();
+  }else{
+    R.streak=0;R.wrongs++;$("rStreak").textContent="0";mark(id,"bad");$("rItem").classList.add("shake");toast("miss","bad");
+    if(S.scale===R.target.s){mark("K"+R.target.i,"ok");$("rFb").textContent="It's key "+(R.target.i+1)+" ("+keyName(R.target.s,R.target.i)+"). Hit it to move on.";}
+    else{$("rFb").textContent="Wrong scale: "+SCALES[R.target.s].name+", key "+(R.target.i+1)+".";}
+    if(R.wrongs>=2){$("rFb").textContent+=" Skipping.";setTimeout(rushNext,600);}
+  }
+}
+function rushEnd(quiet){
+  if(!R.on)return;R.on=false;clearInterval(R.timer);$("rStart").disabled=false;$("rTime").textContent="0";$("rBar").style.width="0%";$("rItem").textContent="Time.";
+  const p=player();if(!p||quiet)return;
+  const sc=rushScaleName(),prev=p.best[sc]||0,pb=R.score>prev;
+  p.best[sc]=Math.max(prev,R.score);p.rounds=(p.rounds||0)+1;if(R.fast!==null&&(p.fastest===null||R.fast<p.fastest))p.fastest=R.fast;
+  DB.board.push({name:p.name,av:p.av,score:R.score,scale:sc,ok:R.ok,n:R.n,date:new Date().toLocaleDateString()});DB.board.sort((a,b)=>b.score-a.score);DB.board=DB.board.slice(0,25);
+  addPts(R.score);
+  if(pb&&prev>0)award("pb");if(R.ok>=10&&R.ok===R.n)award("clean");if(R.score>=1000)award("thousand");if(R.ok>0)award("first");if(R.fast!==null&&R.fast<1)award("fast");
+  if($("rAll").checked&&Object.keys(R.scales).length===4)award("allfour");
+  save();
+  const acc=R.n?Math.round(R.ok/R.n*100):0;
+  const msg=R.score>=2500?"Sharp. That's a butcher's hands.":R.score>=1500?"Solid round.":R.score>=700?"Getting there.":R.n<5?"Warm-up round.":"Back to the walk-in and try again.";
+  $("rResult").innerHTML='<div class="result"><div class="big">'+R.score.toLocaleString()+(pb?' <span style="font-size:14px;color:var(--ok)">new best</span>':'')+'</div><div class="msg">'+msg+'</div><div>'+R.ok+' of '+R.n+' ('+acc+'%), best streak '+R.bestStreak+(R.fast!==null?', fastest '+R.fast.toFixed(2)+' s':'')+', on '+sc+'.</div></div>';
+  if(pb)confetti();
+  renderBoard();
+}
+function renderBoard(){const u=$("rBoard");u.innerHTML="";const p=player();if(!DB.board.length){u.innerHTML='<li><small>No rounds yet. Hit Start.</small></li>';return;}
+  DB.board.slice(0,10).forEach((e,i)=>{const li=document.createElement("li");li.innerHTML='<b>'+(i+1)+'</b><span>'+e.av+' '+e.name+'</span><small>'+e.scale+'</small><span class="sc">'+e.score.toLocaleString()+'</span>';if(p&&e.name===p.name)li.classList.add("me");u.appendChild(li);});}
+$("rStart").addEventListener("click",rushStart);
+$("rAll").addEventListener("change",()=>{if(R.on)rushEnd(true);renderBoard();});
+
+load();
+if(player())setPlayer(DB.current);
+buildTabs();renderGrid();render();renderChip();initLock();
+window.__sim={S,T,Q,R,DB,rushEnd,rushNext};
+</script>
+</body>
+</html>

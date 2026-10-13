@@ -1,0 +1,71 @@
+name: Build and deploy "What we carry"
+
+# Parked. The live workflow is .github/workflows/build.yml (GitHub Pages). This one deploys to
+# Cloudflare Pages instead, which can serve from a private repository on the free plan.
+
+on:
+  schedule:
+    - cron: "0 8 * * *"      # every night, 4am Eastern (8:00 UTC)
+  workflow_dispatch:         # "Run workflow" button for an immediate update
+
+permissions:
+  contents: write            # lets the run commit last-build.txt (keeps the schedule alive)
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Build the pages from Notion
+        run: python build.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
+          NOTION_BRANDS_DATA_SOURCE_ID: ${{ secrets.NOTION_BRANDS_DATA_SOURCE_ID }}
+
+      # The report lists which brands still need a logo. Staff-facing, so it is pulled
+      # out of dist and attached to the run instead of published.
+      - name: Set the brand report aside
+        run: mkdir -p report && mv dist/brands-todo.txt report/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: brand-report
+          path: report/
+          if-no-files-found: ignore
+
+      - name: Create the Pages project if it doesn't exist yet
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create emerys-what-we-carry --production-branch=main
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=emerys-what-we-carry --branch=main
+
+      - name: Record the build (keeps GitHub from pausing the nightly schedule)
+        run: |
+          date -u +"%Y-%m-%d %H:%M UTC" > last-build.txt
+          git config user.name "build bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add last-build.txt
+          git commit -m "Nightly build" || exit 0
+          git push
