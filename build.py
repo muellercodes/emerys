@@ -106,6 +106,10 @@ def demo_rows():
     return out
 
 UNVERIFIED = ("Ask management",)   # rows with this status show the name only
+# Shelf-survey rows that stand in for a product nobody could read yet ("Unread cut cheese
+# wedges, Meat Cave dairy rack", "Chest 1: far-left basket, ..."). Staff bookkeeping, not
+# products, so they stay off the site until the row is renamed to the real product.
+PLACEHOLDER_ROW = re.compile(r"\bunread|^(chest|upright) \d", re.I)
 
 # ---------- public filter ----------
 STAFF = re.compile(r"\$|confirm|\bask\b|\bsell\b|steer|find out|if they|they want|they'll|\bscale\b|\bkey\b|cave sheet|primal sheet|handwritten|treat as|my reading|which\?|before promising|^see |case tag|\bcustomer\b", re.I)
@@ -193,6 +197,8 @@ def public_rows(rows, show_all=False):
         if not n or "(pork scale)" in n or "(key " in n or "(or " in n or "unreadable" in n:
             continue
         n = re.sub(r"\s*\([^)]*\)", "", n).strip()
+        if PLACEHOLDER_ROW.search(n):
+            continue
         p = {"name": n, "cat": r["cat"] or "Other", "aka": r["aka"], "src": source(r["src"]),
              "raw_src": r["src"], "photos": r["photos"], "verified": r["status"] not in UNVERIFIED}
         if p["verified"]:
