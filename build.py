@@ -123,7 +123,7 @@ def clean(text):
     return " ".join(p for p in parts if p and not STAFF.search(p)).strip()
 
 PRICE_STAFF = re.compile(r"confirm|\bask\b|\bsell\b|find out|\bkey\b|seems high|not yet recorded|which key", re.I)
-def clean_price_note(text):
+def clean_sale_note(text):
     """Price notes legitimately contain dollar signs, so they get a lighter filter."""
     if not text:
         return ""
@@ -156,35 +156,54 @@ def sale_info(r):
         return None
     if r.get("sale_until") and r["sale_until"] < today().isoformat():
         return None
-    unit = r["unit"] or "lb"
+    unit = _unit(r)
     if unit == "bag":
         m = re.search(r"per ((?:\d+(?:\.\d+)? )?lb bag)", r["price_notes"] or "", re.I)
         unit = m.group(1) if m else "bag"
     was = r["price"] if (r["price"] is not None and r.get("show_price")) else None
-    return (r["sale_price"], unit, clean_price_note(r.get("sale_note", "")).rstrip("."), was)
+    return (r["sale_price"], unit, clean_sale_note(r.get("sale_note", "")).rstrip("."), was)
+
+# Price notes are mostly staff bookkeeping: where a price was read ("Pork board, Sept 11
+# 2026: ..."), doubts ("looks high", "mis-stickered"), cave sheet primal prices. Customers
+# only get the parts that tell them something about buying: bag sizes, 5 lb tiers, per-unit.
+PRICE_NOTE_PAREN = re.compile(r"\s*\([^)]*\)")
+PRICE_NOTE_SOURCE = re.compile(r"^[^:]{0,60}\b(board|sign|sheet)\b[^:]*:\s*", re.I)
+PRICE_NOTE_STAFF = re.compile(r"board|\bsign\b|\btags?\b|sticker|read off|looks high|seems high|lists one line|"
+                              r"scale label|\bcave\b|primal|sheet|confirm|\bask\b|\bsell\b|find out|\bkey\b|"
+                              r"not yet recorded|\bSept\b|\b20\d\d\b", re.I)
+# A price staff weren't sure of stays off the site unless someone ticks Show price for it.
+PRICE_UNSURE = re.compile(r"confirm|looks high|seems high|mis-?stick|sit a half|unconfirmed|\?", re.I)
+
+def _unit(r):
+    """Notion's Unit options ("per lb", "each", "per bag", "per case") as the page prints them."""
+    return {"": "lb", "per lb": "lb", "per bag": "bag", "per case": "case"}.get(r.get("unit") or "", r.get("unit"))
+
+def clean_price_note(text):
+    if not text:
+        return ""
+    text = PRICE_NOTE_SOURCE.sub("", PRICE_NOTE_PAREN.sub("", text.strip()))
+    parts = [p for p in re.split(r"(?<=[.!?;])\s+", text) if p and not PRICE_NOTE_STAFF.search(p)]
+    out = " ".join(parts).strip()
+    return out[:1].upper() + out[1:] if out else ""
 
 def price_info(r, show_all=False):
-    """Returns (amount, unit label, qualifier, public note) or None. Only when Show price is checked
-    (or show_all, which the demo build uses so the Prices switch can preview every recorded price)."""
+    """Returns (amount, unit label, qualifier, public note) or None. Every recorded price goes in
+    the page behind the Prices switch (show_all); Show price ticked means shown regardless."""
     if r["price"] is None or not (r.get("show_price") or show_all):
         return None
     notes = r["price_notes"] or ""
-    unit = r["unit"] or "lb"
-    qual, note = "", ""
+    if not r.get("show_price") and PRICE_UNSURE.search(notes):
+        return None
+    unit = _unit(r)
+    qual = ""
     if unit == "bag":
         m = re.search(r"per ((?:\d+(?:\.\d+)? )?lb bag)", notes, re.I)
         unit = m.group(1) if m else "bag"
         m = re.search(r"\$\d+(?:\.\d+)?/lb", notes)
         qual = (m.group(0) + " by the pound") if m else ""
-    elif re.search(r"primal", notes, re.I):
-        qual = "bulk primal"
-        note = clean_price_note(re.sub(r"(?i)^bulk primal\.?\s*", "", notes))
-        # "Denver is $15.99/lb." just repeats the price; keep only notes that add something
-        if note and re.fullmatch(r"[^.]*\$\d+(\.\d+)?/lb\.?", note):
-            note = ""
-    else:
-        note = clean_price_note(notes)
-    return (r["price"], unit, qual, note)
+    elif re.search(r"primal|cave sheet", notes, re.I) and f"${r['price']:.2f}" in notes:
+        qual = "whole primal price"
+    return (r["price"], unit, qual, clean_price_note(notes))
 
 ORDER = ["Beef","Pork","Chicken","Turkey","Lamb","Goat","Rabbit","Seafood","Ground & burgers","Sausage",
          "Bacon & smoked","Ham","Hot dogs","Marinated & prepared","Bones & broth","Frozen & bulk","Produce",
