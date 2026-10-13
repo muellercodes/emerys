@@ -145,7 +145,8 @@ CSS = r"""
   .tabs button[aria-selected=true]{background:none;color:#151515;font-weight:400;border-bottom-color:var(--brown)}
   .tabs button:hover{border-bottom-color:#cdb9ab}
   .btools{padding-top:18px}
-  .btools .row{max-width:520px}
+  .btools .row{max-width:none}
+  .btools .search{flex:0 1 520px}
   .bchips{gap:10px 26px;padding:18px 0 4px}
   .bchips button{border:0;border-bottom:1px solid transparent;border-radius:0;background:none;color:#151515;padding:0 0 4px;font:400 13px/22px var(--sans);letter-spacing:.18em;text-transform:uppercase}
   .bchips button[aria-pressed=true]{background:none;color:#151515;border-bottom-color:var(--brown)}
@@ -257,8 +258,18 @@ A.value=__FIRST__;B.value=__SECOND__;cmp();
 var bnote=document.getElementById('bpricenote');
 if(typeof setPrices!=='function'){
   var bsw=document.querySelector('#tab-cuts .switch');
-  if(bsw){bsw.addEventListener('click',function(){var on=bsw.getAttribute('aria-checked')!=='true';bsw.setAttribute('aria-checked',on?'true':'false');document.body.classList.toggle('prices',on);bnote.hidden=!on;});}
-  else{bnote.hidden=!document.querySelector('#blist .price');}
+  var bset=function(on,user){
+    if(bsw)bsw.setAttribute('aria-checked',on?'true':'false');
+    document.body.classList.toggle('prices',on);
+    bnote.hidden=!(on||document.querySelector('#blist .price.pub:not(.sale)'));
+    if(user){try{localStorage.setItem('emerys.prices',on?'1':'0');}catch(e){}}
+  };
+  if(bsw){
+    if(!document.querySelector('#blist .price'))bsw.hidden=true;
+    bsw.addEventListener('click',function(){bset(bsw.getAttribute('aria-checked')!=='true',true);});
+  }
+  var bsaved=null,bhash='';try{bsaved=localStorage.getItem('emerys.prices');bhash=location.hash;}catch(e){}
+  bset(bhash==='#prices'||bsaved==='1',false);
 }else{
   new MutationObserver(function(){bnote.hidden=!document.body.classList.contains('prices');}).observe(document.body,{attributes:true,attributeFilter:['class']});
   bnote.hidden=!document.body.classList.contains('prices');
@@ -268,7 +279,7 @@ try{var bh=location.hash.slice(1);if(bh&&bh.indexOf('/')<0&&blurbs[bh]!==undefin
 
 def build_beef(rows, demo=False):
     from build import process_photos, item_html
-    rows = public_rows(rows, show_all=demo)
+    rows = public_rows(rows, show_all=True)
     by_name = {r["name"]: r for r in rows}
     beef = [r for r in rows if r["cat"] in BEEF_CATS]
     for r in beef:
@@ -301,7 +312,7 @@ def build_beef(rows, demo=False):
     opts = "".join(f'<option value="{esc(n)}">{esc(n)}</option>' for n in sorted(cmp))
     first, second = ("Porterhouse", "T-bone") if "Porterhouse" in cmp and "T-bone" in cmp else (sorted(cmp)[:2] + ["", ""])[:2]
 
-    switch = ('<button type="button" class="switch" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>' if demo else "")
+    switch = '<button type="button" class="switch" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
     basics = "".join(f"<li><b>{esc(t)}</b><span>{esc(b)}</span></li>" for t, b in BASICS)
 
     content = f'''<div class="wrap">
@@ -344,7 +355,7 @@ def build_beef(rows, demo=False):
     logo, ld = logo_and_ld(demo)
     return shell(title="Beef cuts", desc="A tappable chart of where each beef cut comes from, what to buy for what you're cooking, and how two cuts compare, from Emery's Meat & Produce in Brewer, Maine.",
                  head_block=HEAD_BLOCK, content=content, script=script, extra_css=CSS, active="beef", logo=logo, ld=ld,
-                 footnote="Cuts and availability change with what comes in from the farms.", bodyclass="" if demo else "prices")
+                 footnote="Cuts and availability change with what comes in from the farms.", bodyclass="")
 
 # ---------- single-file demo: both pages in one document, switched by hash ----------
 ROUTER = r'''

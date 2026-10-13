@@ -214,6 +214,7 @@ def public_rows(rows, show_all=False):
         pi = price_info(r, show_all)
         if pi:
             p["price"] = pi
+            p["price_pub"] = bool(r.get("show_price"))
         si = sale_info(r)
         if si:
             p["sale"] = si
@@ -318,13 +319,14 @@ def esc(s): return html.escape(str(s), quote=True)
 def price_html(p):
     if "sale" in p:
         amt, unit, note, was = p["sale"]
-        return (f'<span class="price sale"><b>${amt:.2f}</b><span class="unit">/{esc(unit)}</span>'
+        return (f'<span class="price sale pub"><b>${amt:.2f}</b><span class="unit">/{esc(unit)}</span>'
                 + (f'<s class="was">${was:.2f}</s>' if was is not None else "")
                 + (f'<span class="qual">{esc(note)}</span>' if note else "") + "</span>")
     if "price" not in p:
         return ""
     amt, unit, qual, _ = p["price"]
-    return (f'<span class="price"><b>${amt:.2f}</b><span class="unit">/{esc(unit)}</span>'
+    pub = " pub" if p.get("price_pub") else ""
+    return (f'<span class="price{pub}"><b>${amt:.2f}</b><span class="unit">/{esc(unit)}</span>'
             + (f'<span class="qual">{esc(qual)}</span>' if qual else "") + "</span>")
 
 def item_html(p, gallery, thumb, in_specials=False, id_prefix="", chart_link=True, extra=""):
@@ -339,7 +341,7 @@ def item_html(p, gallery, thumb, in_specials=False, id_prefix="", chart_link=Tru
         imgs = "".join(f'<img src="{esc(u)}" alt="{esc(p["name"])}" loading="lazy">' for u in gallery)
         body = f'<div class="gallery{" one" if len(gallery)==1 else ""}">{imgs}</div>' + body
     if "price" in p and p["price"][3]:
-        body += f'<div class="pnote"><h3>Price</h3><p>{esc(p["price"][3])}</p></div>'
+        body += f'<div class="pnote{" pub" if p.get("price_pub") else ""}"><h3>Price</h3><p>{esc(p["price"][3])}</p></div>'
     if body and chart_link and p["name"] in PRIMAL_OF:
         pk = PRIMAL_OF[p["name"]]
         body += f'<p class="fine from"><a href="beef.html#{pk}">From the {esc(PRIMALS[pk][0].lower())}. See it on the chart.</a></p>'
@@ -365,7 +367,7 @@ def item_html(p, gallery, thumb, in_specials=False, id_prefix="", chart_link=Tru
     return f'<div class="item plain" {attrs}>{left}</div>'
 
 def build(rows, demo=False):
-    rows = public_rows(rows, show_all=demo)
+    rows = public_rows(rows, show_all=True)
     specials = [r for r in rows if "sale" in r]
     regular = [r for r in rows if "sale" not in r]
     cats = [c for c in ORDER if any(r["cat"] == c for r in rows)]
@@ -399,8 +401,7 @@ def build(rows, demo=False):
             for path, name, url in brands.CURRENT.all_logos())
         if strip:
             brand_strip = f'<section class="brands in"><h2>Brands we carry</h2><div class="strip">{strip}</div></section>'
-    switch = ('<button type="button" class="switch" id="prices" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
-              if demo else "")
+    switch = '<button type="button" class="switch" id="prices" role="switch" aria-checked="false"><span class="knob" aria-hidden="true"></span>Prices</button>'
     logo, ld = logo_and_ld(demo)
     return shell(title="What We Carry",
                  desc="Steaks, roasts, sausage, local pork, and more at Emery's Meat &amp; Produce in Brewer, Maine, with what each cut is and how to cook it.",
@@ -408,7 +409,7 @@ def build(rows, demo=False):
                                                              .replace("{{SWITCH}}", switch).replace("{{BRANDS}}", brand_strip),
                  script=INDEX_SCRIPT, extra_css="", active="carry", logo=logo, ld=ld,
                  footnote=f"{len(rows)} products listed. Cuts and availability change with what comes in from the farms.",
-                 bodyclass="" if demo else "prices")
+                 bodyclass="")
 
 def shell(title, desc, head_block, content, script, extra_css, active, logo, ld, footnote, bodyclass=""):
     cur = ' aria-current="page"'
@@ -497,11 +498,11 @@ h1{margin:0 0 14px;font:400 38px/1.15 var(--serif);color:var(--ink)}
 .search input:focus{outline:3px solid var(--brown);outline-offset:1px;border-color:var(--brown)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* price switch */
-.switch{display:flex;align-items:center;gap:8px;font:inherit;font-size:14px;color:var(--ink);cursor:pointer;white-space:nowrap;border:0;background:none;padding:6px 2px;margin:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.knob{position:relative;width:42px;height:24px;border-radius:12px;background:#c9bdb4;transition:background .15s}
-.knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch{display:flex;align-items:center;gap:7px;font:inherit;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap;border:0;background:none;padding:6px 2px;margin:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.knob{position:relative;width:34px;height:20px;border-radius:10px;background:#c9bdb4;transition:background .15s}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .15s}
 .switch[aria-checked=true] .knob{background:var(--brown)}
-.switch[aria-checked=true] .knob::after{transform:translateX(18px)}
+.switch[aria-checked=true] .knob::after{transform:translateX(14px)}
 .switch:focus-visible{outline:3px solid var(--brown);outline-offset:2px;border-radius:4px}
 @media(prefers-reduced-motion:reduce){.knob,.knob::after{transition:none}}
 .chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 6px;scrollbar-width:none}
@@ -559,6 +560,8 @@ body.prices .price .was{display:block}
 .specials .tag{background:var(--brown);color:#fff;border-color:var(--brown)}
 body.prices .price,body.prices .pnote{display:block}
 body.prices .price{display:inline-block}
+.price.pub,#blist .price.pub{display:inline-block}
+.pnote.pub,#blist .pnote.pub{display:block}
 .body{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:4px 14px 12px;margin:0 0 14px}
 .body h3{margin:12px 0 2px;font:600 13px/1.3 inherit;font-family:inherit;color:var(--muted)}
 .body p{margin:0;font-size:15px;line-height:1.5}
@@ -605,7 +608,9 @@ body.prices .price{display:inline-block}
   /* search, and the categories as a second row of nav-style links */
   .tools{border-bottom:0;box-shadow:0 1px 0 var(--line)}
   .tools .in{max-width:1160px;padding:24px 24px 14px;display:block}
-  .tools .row{max-width:560px}
+  .tools .row{max-width:none}
+  .tools .search{flex:0 1 560px}
+  .switch{margin-left:auto;font:400 12px/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:#595959}
   .search input{border:1px solid #c7c3c1;border-radius:0;padding:13px 16px;font-size:16px}
   .search input:focus{outline:2px solid var(--brown);outline-offset:0;border-color:var(--brown)}
   .chips{flex-wrap:wrap;overflow:visible;justify-content:flex-start;gap:10px 28px;padding:18px 0 0}
@@ -772,11 +777,13 @@ function apply(){
   }
   empty.hidden=n>0;
 }
+var PKEY='emerys.prices';
 function setPrices(on,fromUser){
-  if(!demo){note.hidden=!document.querySelector('.price:not(.sale)');return;}
-  sws.forEach(function(b){b.setAttribute('aria-checked',on?'true':'false');}); document.body.classList.toggle('prices',on); note.hidden=!on;
-  if(fromUser){try{history.replaceState(null,'',on?'#prices':' ');}catch(e){}}
+  sws.forEach(function(b){b.setAttribute('aria-checked',on?'true':'false');}); document.body.classList.toggle('prices',on);
+  note.hidden=!(on||document.querySelector('.price.pub:not(.sale)'));
+  if(fromUser){try{localStorage.setItem(PKEY,on?'1':'0');}catch(e){}}
 }
+if(!document.querySelector('.price')){sws.forEach(function(b){b.hidden=true;});}
 q.addEventListener('input',apply);
 chips.addEventListener('click',function(e){
   var b=e.target.closest('button'); if(!b)return;
@@ -784,9 +791,10 @@ chips.addEventListener('click',function(e){
   [].forEach.call(chips.children,function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
   apply(); window.scrollTo({top:0});
 });
-if(demo){sws.forEach(function(b){b.addEventListener('click',function(){setPrices(b.getAttribute('aria-checked')!=='true',true);});});}
+sws.forEach(function(b){b.addEventListener('click',function(){setPrices(b.getAttribute('aria-checked')!=='true',true);});});
 var hash=''; try{hash=location.hash;}catch(e){}
-setPrices(hash==='#prices');
+var savedPrices=null; try{savedPrices=localStorage.getItem(PKEY);}catch(e){}
+setPrices(hash==='#prices'||savedPrices==='1');
 function openItem(id){var t=document.getElementById(id);if(t&&t.classList.contains('item')){if(t.tagName==='DETAILS')t.open=true;setTimeout(function(){t.scrollIntoView({block:'start'});window.scrollBy(0,-130);},50);}}
 try{var h=hash.slice(1);if(h&&h!=='prices'&&h.indexOf('/')<0)openItem(h);}catch(e){}"""
 

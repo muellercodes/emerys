@@ -74,8 +74,15 @@ rush mode. Scores live on each phone.
 ## What reaches the page, and what doesn't
 
 Shown: name, category, also called, brand or source, brand logo, what it is, how to
-cook, taste, common question, fact, recipe, ingredients, nutrition, photos, price (only
-when Show price is ticked), and specials.
+cook, taste, common question, fact, recipe, ingredients, nutrition, photos, prices, and
+specials.
+
+**Prices and the Prices switch.** Every product with a Price in Notion has it in the
+page, hidden until a visitor flips the small Prices switch next to the search box. The
+switch stays where they left it on that device, on both pages, and a link ending in
+`#prices` opens with it on. A row with **Show price** ticked shows its price even with
+the switch off, and a sale price always shows. Because the prices are in the page,
+anyone who looks can see them, including ones still marked unconfirmed in Notion.
 
 Never shown: PLU, scale keys, the Notes column, and any sentence written staff to staff
 ("ask which cut", "sell the porterhouse"). That filter is a word list and not perfect;
@@ -93,9 +100,9 @@ Ingredients only show if the column is filled in from the actual label.
   Category. Everything else is optional and can come later.
 - **Photo:** open the product row, tap the Photo property, add from camera. Keep it
   under 5 MB (a normal phone photo is fine). The first photo is the thumbnail.
-- **Price:** fill in Price and Unit, then tick **Show price**. Unticked, the price
-  stays off the site. Anything in Price notes that isn't for the public gets filtered,
-  but keep it short.
+- **Price:** fill in Price and Unit. It shows when a visitor turns on the Prices
+  switch; tick **Show price** to show it all the time. Anything in Price notes that
+  isn't for the public gets filtered, but keep it short.
 - **Special:** put the sale price in **Sale price**, the last day in **Sale until**,
   and a short line for customers in **Sale note** ("Through Sunday"). The product moves
   to an "On special" section at the top of the page and comes up first in search. The
