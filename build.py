@@ -788,7 +788,7 @@ function openDrawer(item){
   var b=body.cloneNode(true);b.className='dcontent';dbody.appendChild(b);
   drawer.hidden=false;document.documentElement.classList.add('dopen');
   drawer.querySelector('.dpanel').scrollTop=0;
-  requestAnimationFrame(function(){requestAnimationFrame(function(){drawer.classList.add('on');});});
+  void drawer.offsetWidth;drawer.classList.add('on');
   dlast=item.querySelector('summary');
   try{drawer.querySelector('.dclose').focus({preventScroll:true});}catch(e){}
   return true;
