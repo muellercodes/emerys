@@ -1,0 +1,81 @@
+name: Build and deploy
+
+# Rebuilds What We Carry, Beef Cuts and the scale trainer from the Notion catalogue and
+# publishes them to GitHub Pages. Runs every night, on every push to main, and from the
+# "Run workflow" button (or `gh workflow run build.yml`) right after a catalogue update.
+
+on:
+  schedule:
+    - cron: "0 8 * * *"      # 4am Eastern (8:00 UTC)
+  push:
+    branches: [main]
+    paths-ignore: ["README.md", "last-build.txt"]
+  workflow_dispatch:
+
+permissions:
+  contents: write            # the monthly keep-alive commit below
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Build the pages
+        run: python build.py
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATA_SOURCE_ID: ${{ secrets.NOTION_DATA_SOURCE_ID }}
+          NOTION_BRANDS_DATA_SOURCE_ID: ${{ secrets.NOTION_BRANDS_DATA_SOURCE_ID }}
+          SHOP_CODE: ${{ secrets.SHOP_CODE }}
+          # Set this variable to carry.emerysmeatbrewer.com once that DNS record exists. Until
+          # then the site lives at muellercodes.github.io/emerys/ and asks search engines to stay away.
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+
+      # Which brands still need a logo. Staff-facing, so it is attached to the run, not published.
+      - name: Set the brand report aside
+        run: mkdir -p report && mv dist/brands-todo.txt report/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brand-report
+          path: report/
+          if-no-files-found: ignore
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      # GitHub pauses scheduled runs on a repo with no commits for 60 days. One tiny commit on
+      # the first of the month keeps the nightly build going without cluttering the history.
+      - name: Keep the schedule alive
+        if: github.event_name == 'schedule'
+        run: |
+          [ "$(date -u +%d)" = "01" ] || exit 0
+          date -u +"%Y-%m-%d %H:%M UTC" > last-build.txt
+          git config user.name "build bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add last-build.txt
+          git commit -m "Monthly keep-alive" || exit 0
+          git push
